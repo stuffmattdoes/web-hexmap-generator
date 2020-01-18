@@ -14,8 +14,9 @@ function HexGrid({ w, h, x, y }) {
                 j * (outerRadius * 1.5),
                 0
             );
-            const hexCell = Hexagon(position);
-            hexGrid.add(hexCell);
+            const hexCell = new Hexagon(position);
+            console.log(hexCell);
+            hexGrid.add(hexCell.mesh);
         }
     }
 
@@ -24,6 +25,10 @@ function HexGrid({ w, h, x, y }) {
 
 // Hexagon
 function Hexagon({ x, y, z }) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+
 	let hex = new Shape()
         .moveTo(x, y)
         .lineTo(x, y + outerRadius)
@@ -34,13 +39,13 @@ function Hexagon({ x, y, z }) {
         .lineTo(x - innerRadius, y + (0.5 * outerRadius))
         .lineTo(x, y + outerRadius);
 
-    let geo = new ShapeGeometry(hex);
-    const color = '#' + Math.floor(Math.random()*16777215).toString(16);
-    let mat = new MeshBasicMaterial({ color });
-    let mesh = new Mesh(geo, mat);
-    mesh.rotation.x = (-90 * Math3.DEG2RAD);
-
-	return mesh;
+    this.geo = new ShapeGeometry(hex);
+    this.color = '#' + Math.floor(Math.random()*16777215).toString(16);
+    this.mat = new MeshBasicMaterial({ color: this.color });
+    this.mesh = new Mesh(this.geo, this.mat);
+    this.mesh.rotation.x = (-90 * Math3.DEG2RAD);
+    
+	return this;
 }
 
 export default HexGrid;
