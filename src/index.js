@@ -8,11 +8,11 @@ import {
 	Scene,
 	WebGLRenderer
 } from 'three';
-import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
+import { MapControls, OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { WEBGL } from './webGL';
 
 // Game Objects
-import Hexagon from './hexagon';
+import HexGrid from './hexagon';
 
 let scene = new Scene();
 scene.background = new Color(0xcccccc);
@@ -25,7 +25,8 @@ camera.position.set(0, 5, 10);
 let renderer = new WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-let controls = new MapControls(camera, renderer.domElement);
+// let controls = new MapControls(camera, renderer.domElement);
+let controls = new OrbitControls(camera, renderer.domElement);
 
 function initialize() {
 	document.body.appendChild(renderer.domElement);
@@ -47,22 +48,18 @@ function initialize() {
 
 
 	// Controls
-	//controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
-
+	// controls.addEventListener('change', render); // call this only in static scenes (i.e., if there is no animation loop)
 	controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 	controls.dampingFactor = 0.05;
-
 	controls.screenSpacePanning = false;
-
-	controls.minDistance = 100;
-	controls.maxDistance = 500;
-
-	controls.maxPolarAngle = Math.PI / 2;
+	controls.minDistance = 20;
+	controls.maxDistance = 100;
+	controls.maxPolarAngle = Math.PI;
 
 
 	// Game Objects
-	const hex = Hexagon({ x: 0, y: 0 });
-	scene.add(hex);
+	const hexGrid = HexGrid({ h: 6, w: 6, x: -3, y: -3 });
+	scene.add(hexGrid);
 
 
 	if (WEBGL.isWebGLAvailable()) {
@@ -87,7 +84,7 @@ function update() {
 }
 
 function helpers() {
-	const helper = new GridHelper(1000, 20, 0xffffff, 0xffffff);
+	const helper = new GridHelper(100, 20, 0xffffff, 0xffffff);
 	scene.add( helper );
 }
 
