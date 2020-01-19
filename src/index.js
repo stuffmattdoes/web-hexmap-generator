@@ -19,19 +19,23 @@ scene.background = new Color(0xcccccc);
 scene.fog = new FogExp2(0xcccccc, 0.002);
 
 let camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 10);
+camera.position.set(0, 25, 15);
 // camera.rotation.set(10, 10, 10);
 
 let renderer = new WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// let controls = new MapControls(camera, renderer.domElement);
-let controls = new OrbitControls(camera, renderer.domElement);
+let controls = new MapControls(camera, renderer.domElement);
+// let controls = new OrbitControls(camera, renderer.domElement);
 
 function initialize() {
 	document.body.appendChild(renderer.domElement);
 	window.addEventListener('resize', onWindowResize, false);
-	helpers();
+	
+	
+	// Grid
+	const grid = new GridHelper(100, 20, '#FF9933', '#fff');
+	scene.add(grid);
 
 
 	// Lighting
@@ -58,7 +62,7 @@ function initialize() {
 
 
 	// Game Objects
-	const hexGrid = HexGrid({ h: 6, w: 6, x: -3, y: -3 });
+	const hexGrid = HexGrid(6, 6);
 	scene.add(hexGrid);
 
 
@@ -83,9 +87,8 @@ function update() {
 	renderer.render(scene, camera);
 }
 
-function helpers() {
-	const helper = new GridHelper(100, 20, 0xffffff, 0xffffff);
-	scene.add( helper );
-}
-
 initialize();
+
+export {
+	scene
+};
