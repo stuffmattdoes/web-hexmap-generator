@@ -48,23 +48,24 @@ function Hexagon({ x: cx, y: cy }) {
 	let shape = new Shape(points);
     this.geometry = new ShapeGeometry(shape);
     this.geometry.translate(x, y, 0);
+    this.geometry.rotateX(-90 * Math3.DEG2RAD);
     // this.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( 0, 0, 0 ));
 
     
     // Debug
-    // const wireframe = new THREE.WireframeGeometry(this.geometry);
-    // const line = new THREE.LineSegments(wireframe);
-    // line.material.depthTest = false;
-    // line.material.opacity = 0.25;
-    // line.material.transparent = true;
-    // scene.add(line);
+    const wireframe = new THREE.WireframeGeometry(this.geometry);
+    const line = new THREE.LineSegments(wireframe);
+    line.material.depthTest = false;
+    line.material.opacity = 0.25;
+    line.material.transparent = true;
+    scene.add(line);
 
     label(cx, cy, x, y);
 
-    this.color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+    this.color = '#' + Math.random().toString(16).slice(2, 8);
     this.material = new MeshBasicMaterial({ color: this.color });
     this.mesh = new Mesh(this.geometry, this.material);
-    this.mesh.rotation.x = -90 * Math3.DEG2RAD;
+    // this.mesh.rotation.x = -90 * Math3.DEG2RAD;
     
 	return this;
 }
