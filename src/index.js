@@ -5,14 +5,19 @@ import {
 	FogExp2,
 	GridHelper,
 	PerspectiveCamera,
+	Raycaster,
 	Scene,
-	WebGLRenderer
+	WebGLRenderer,
+	Vector2
 } from 'three';
 import { MapControls, OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { WEBGL } from './webGL';
 
 // Game Objects
 import HexGrid from './hexagon';
+
+const raycaster = new Raycaster();
+const mouse = new Vector2();
 
 let scene = new Scene();
 scene.background = new Color(0xcccccc);
