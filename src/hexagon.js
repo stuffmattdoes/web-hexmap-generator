@@ -83,12 +83,12 @@ function Hexagon({ x: cX, y: cY, z: cZ}) {
     mesh.name = 'Hexagon';
 
     // Wireframe
-    // const wireframe = new WireframeGeometry(geometry);
-    // const line = new LineSegments(wireframe);
-    // line.material.depthTest = false;
-    // line.material.opacity = 0.25;
-    // line.material.transparent = true;
-    // scene.add(line);
+    const wireframe = new WireframeGeometry(geometry);
+    const line = new LineSegments(wireframe);
+    line.material.depthTest = false;
+    line.material.opacity = 0.25;
+    line.material.transparent = true;
+    scene.add(line);
 
     label(this.coordinates, this.position);
 

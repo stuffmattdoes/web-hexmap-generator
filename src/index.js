@@ -2,8 +2,10 @@ import {
 	AmbientLight,
 	Color,
 	DirectionalLight,
-	FogExp2,
+	Fog,
+	// FogExp2,
 	GridHelper,
+	HemisphereLight,
 	PerspectiveCamera,
 	Raycaster,
 	Scene,
@@ -15,68 +17,99 @@ import { WEBGL } from './webGL';
 
 // Game Objects
 import HexGrid from './hexagon';
-import { _Math } from 'three/src/math/Math';
 
-const raycaster = new Raycaster();
-const mouse = new Vector2();
+let HEIGHT,
+	WIDTH,
+	camera,
+	controls,
+	mouse,
+	raycaster,
+	renderer,
+	scene;
+
 let hexGrid,
 	intersects,
-	intersected;
+	intersected;	
 
-let scene = new Scene();
-scene.background = new Color('#ccc');
-scene.fog = new FogExp2('#ccc', 0.002);
-
-let camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 25, 15);
-// camera.rotation.set(10, 10, 10);
-
-let renderer = new WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-
-let controls = new MapControls(camera, renderer.domElement);
-
-function initialize() {
-	document.body.appendChild(renderer.domElement);
-	window.addEventListener('resize', onWindowResize, false);
-	document.addEventListener('mousemove', onMouseMove, false);
-	
-	// Grid
-	const grid = new GridHelper(100, 20, '#FF9933', '#fff');
-	scene.add(grid);
-
-	// Lighting
-	let light = new DirectionalLight('#fff');
-	light.position.set(1, 1, 1);
-	scene.add(light);
-
-	light = new DirectionalLight('#002288');
-	light.position.set(-1, -1, -1);
-	scene.add(light);
-
-	light = new AmbientLight('#222222');
-	scene.add(light);
-
-	// Controls
-	// controls.addEventListener('change', render); // call this only in static scenes (i.e., if there is no animation loop)
+function createControls() {
+	controls = new MapControls(camera, renderer.domElement);
 	controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 	controls.dampingFactor = 0.05;
 	controls.screenSpacePanning = false;
 	controls.minDistance = 20;
 	controls.maxDistance = 100;
 	controls.maxPolarAngle = Math.PI;
+}
 
-	// Game Objects
+function createLighting() {
+	// const ambientLight = new AmbientLight('#222222');
+	const sky = '#aaa';
+	const ground = '#000';
+	const hemisphereLight = new HemisphereLight(sky, ground, .9);
+	// const directionalLight = new THREE.DirectionalLight('#fff', .9);
+	// directionalLight.position.set(150, 350, 350);
+	// directionalLight.castShadow = true;
+	// directionalLight.shadow.camera.left = -400;		// Directional shadows visible area constraints
+	// directionalLight.shadow.camera.right = 400;
+	// directionalLight.shadow.camera.top = 400;
+	// directionalLight.shadow.camera.bottom = -400;
+	// directionalLight.shadow.camera.near = 1;
+	// directionalLight.shadow.camera.far = 1000;
+
+	// // Shadow resolution
+	// directionalLight.shadow.mapSize.width = 2048;
+	// directionalLight.shadow.mapSize.height = 2048;
+
+	scene.add(hemisphereLight);
+	// scene.add(directionalLight);
+	// scene.add(ambientLight);
+}
+
+function createScene() {
+	HEIGHT = window.innerHeight;
+	WIDTH = window.innerWidth;
+
+	// Scene
+	scene = new Scene();
+	scene.background = new Color('#ccc');
+	// scene.fog = new FogExp2('#ccc', 0.002);
+	scene.fog = new Fog('#ccc', 100, 950);
+
+	// Camera
+	const aspectRatio = WIDTH / HEIGHT;
+	const fieldOfView = 60;
+	const nearPlane = 1;
+	const farPlane = 10000;
+	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
+	camera.position.set(0, 25, 15);
+	camera.rotation.set(10, 10, 10);
+
+	// Interaction
+	mouse = new Vector2();
+	raycaster = new Raycaster();
+	
+	// Renderer
+	renderer = new WebGLRenderer({ 
+		alpha: true, 
+		antialias: true 
+	});
+
+	renderer.setSize(WIDTH, HEIGHT);
+	// renderer.shadowMap.enabled = true;
+
+	document.body.appendChild(renderer.domElement);
+	document.addEventListener('mousemove', onMouseMove, false);
+	window.addEventListener('resize', onWindowResize, false);
+}
+
+function createutilities() {
+	const grid = new GridHelper(100, 20, '#FF9933', '#fff');
+	scene.add(grid);
+}
+
+function createObjects() {
 	hexGrid = new HexGrid(6, 6);
 	scene.add(hexGrid);
-
-	if (WEBGL.isWebGLAvailable()) {
-		// Initiate function or other initializations here
-		update();
-	} else {
-		var warning = WEBGL.getWebGLErrorMessage();
-		document.body.appendChild(warning);
-	}
 }
 
 function onWindowResize() {
@@ -90,17 +123,10 @@ function update() {
 	intersects = raycaster.intersectObjects(hexGrid.children);
 
 	if (intersects.length > 0 ) {
-		if (intersected != intersects[0].object) {
-			// if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
-			intersected = intersects[0].object;
-			// intersected.currentHex = intersected.material.emissive.getHex();
-			// intersected.material.emissive.setHex('#ff0000');
-			// intersected.material.color = '#fff';
-			// intersected.material.color = new THREE.Color('#ff0000');
+		if (intersected != intersects[0]) {
+			intersected = intersects[0];
 		}
 	} else {
-		// if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
-		// intersected.material.color = '#fff';
 		intersected = null;
 	}
 
@@ -110,14 +136,31 @@ function update() {
 }
 
 function onMouseMove({ clientX, clientY }) {
-	// Normalized from -1 to 1
 	event.preventDefault();
-	mouse.x = (clientX / window.innerWidth) * 2 - 1;
-	mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-	console.log(intersected);
+	
+	// Normalized from -1 to 1
+	mouse = new Vector2(
+		(clientX / window.innerWidth) * 2 - 1,
+		-(clientY / window.innerHeight) * 2 + 1
+	);
+	console.log(intersected.object);
 }
 
-initialize();
+function initialize() {
+	createScene();
+	createControls();
+	createLighting();
+	createutilities();
+	createObjects();
+	update();
+}
+
+if (WEBGL.isWebGLAvailable()) {
+	initialize();
+} else {
+	var warning = WEBGL.getWebGLErrorMessage();
+	document.body.appendChild(warning);
+}
 
 export {
 	scene
