@@ -19,8 +19,9 @@ import { _Math } from 'three/src/math/Math';
 
 const raycaster = new Raycaster();
 const mouse = new Vector2();
-let intersects;
-let intersected;
+let hexGrid,
+	intersects,
+	intersected;
 
 let scene = new Scene();
 scene.background = new Color('#ccc');
@@ -66,7 +67,7 @@ function initialize() {
 	controls.maxPolarAngle = Math.PI;
 
 	// Game Objects
-	const hexGrid = new HexGrid(6, 6);
+	hexGrid = new HexGrid(6, 6);
 	scene.add(hexGrid);
 
 	if (WEBGL.isWebGLAvailable()) {
@@ -86,19 +87,22 @@ function onWindowResize() {
 
 function update() {
 	raycaster.setFromCamera(mouse, camera);
-	intersects = raycaster.intersectObjects(scene.children);
+	intersects = raycaster.intersectObjects(hexGrid.children);
 
-	// if (intersects.length > 0 ) {
-	// 	if (intersected != intersects[0].object) {
-	// 		if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
-	// 		intersected = intersects[0].object;
-	// 		intersected.currentHex = intersected.material.emissive.getHex();
-	// 		intersected.material.emissive.setHex('#ff0000');
-	// 	}
-	// } else {
-	// 	if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
-	// 	intersected = null;
-	// }
+	if (intersects.length > 0 ) {
+		if (intersected != intersects[0].object) {
+			// if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
+			intersected = intersects[0].object;
+			// intersected.currentHex = intersected.material.emissive.getHex();
+			// intersected.material.emissive.setHex('#ff0000');
+			// intersected.material.color = '#fff';
+			// intersected.material.color = new THREE.Color('#ff0000');
+		}
+	} else {
+		// if (intersected) intersected.material.emissive.setHex(intersected.currentHex);
+		// intersected.material.color = '#fff';
+		intersected = null;
+	}
 
 	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
 	renderer.render(scene, camera);
@@ -110,7 +114,7 @@ function onMouseMove({ clientX, clientY }) {
 	event.preventDefault();
 	mouse.x = (clientX / window.innerWidth) * 2 - 1;
 	mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-	console.log(intersects);
+	console.log(intersected);
 }
 
 initialize();

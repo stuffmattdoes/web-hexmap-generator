@@ -26,6 +26,7 @@ const innerRadius = outerRadius * 0.866025404;
 
 function HexGrid(width, height) {
     let hexGrid = new Group();
+    hexGrid.name = 'HexGrid';
 
     for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
@@ -82,20 +83,14 @@ function Hexagon({ x: cX, y: cY, z: cZ}) {
     mesh.name = 'Hexagon';
 
     // Wireframe
-    const wireframe = new WireframeGeometry(this.geometry);
-    const line = new LineSegments(wireframe);
-    line.material.depthTest = false;
-    line.material.opacity = 0.25;
-    line.material.transparent = true;
-    scene.add(line);
+    // const wireframe = new WireframeGeometry(geometry);
+    // const line = new LineSegments(wireframe);
+    // line.material.depthTest = false;
+    // line.material.opacity = 0.25;
+    // line.material.transparent = true;
+    // scene.add(line);
 
     label(this.coordinates, this.position);
-
-    // const lineGeo = new BufferGeometry();
-    // lineGeo.setAttribute('position', new BufferAttribute(new Float32Array(4 * 3), 3));
-    // const lineMat = new LineBasicMaterial({ color: '#fff', transparent: true });
-    // const outline = new Line(lineGeo, lineMat);
-    // scene.add(outline);
 
 	return mesh;
 }
