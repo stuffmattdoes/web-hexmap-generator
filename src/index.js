@@ -1,11 +1,10 @@
 import {
-	AmbientLight,
 	Color,
-	DirectionalLight,
 	Fog,
 	// FogExp2,
 	GridHelper,
 	HemisphereLight,
+	Material,
 	PerspectiveCamera,
 	Raycaster,
 	Scene,
@@ -29,7 +28,7 @@ let HEIGHT,
 
 let hexGrid,
 	intersects,
-	intersected;	
+	intersected;
 
 function createControls() {
 	controls = new MapControls(camera, renderer.domElement);
@@ -125,8 +124,11 @@ function update() {
 	if (intersects.length > 0 ) {
 		if (intersected != intersects[0]) {
 			intersected = intersects[0];
+			// intersected.originalMaterial = intersected.object.material;
+			// intersected.object.material.color = new Color('#fff');
 		}
 	} else {
+		// if (intersected) intersected.object.material = new Material(intersected.originalMaterial);
 		intersected = null;
 	}
 
@@ -143,7 +145,7 @@ function onMouseMove({ clientX, clientY }) {
 		(clientX / window.innerWidth) * 2 - 1,
 		-(clientY / window.innerHeight) * 2 + 1
 	);
-	console.log(intersected.object);
+	console.log(intersected && intersected.originalMaterial);
 }
 
 function initialize() {
