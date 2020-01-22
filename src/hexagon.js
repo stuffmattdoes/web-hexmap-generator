@@ -25,14 +25,12 @@ const innerRadius = outerRadius * 0.866025404;
 function HexGrid(width, height) {
     let hexGrid = new Group();
     hexGrid.name = 'HexGrid';
-
-    hexGrid.position.x = (-width / 2) * outerRadius;
-    hexGrid.position.z = -(height / 2) * outerRadius;
+    hexGrid.position.x = -(width * innerRadius) + innerRadius;
+    hexGrid.position.z = -(height * innerRadius) + innerRadius;
 
     for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
-            let coordindates = new Vector3(i, 0, j);
-            const hexCell = new Hexagon(coordindates);
+            const hexCell = new Hexagon(i, 0, j);
             hexGrid.add(hexCell);
         }
     }
@@ -41,12 +39,11 @@ function HexGrid(width, height) {
 }
 
 // Hexagon
-function Hexagon({ x: cX, y: cY, z: cZ}) {
+function Hexagon(cX, cY, cZ) {
     this.coordinates = {
-        // x: cX - cZ / 2,
-        x: cX,
-        y: cY,
-        z: cZ
+        // x: cX - (cZ - (cZ & 1)) / 2,    // "& 1" is "bitwise and"
+        x: cX - (cZ - (cZ % 2)) / 2,    // Also works
+        z: cZ,
     }
     this.position = {
         x: (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
@@ -82,8 +79,8 @@ function Hexagon({ x: cX, y: cY, z: cZ}) {
 
     const hexagon = new Mesh(geometry, material);
     hexagon.name = 'Hexagon';
-
     hexagon.position.x = this.position.x;
+    // hexagon.position.y = Math.floor(Math.random() * 10);
     hexagon.position.z = this.position.z;
 
     createLabel(this.coordinates).then(text => hexagon.add(text));
@@ -111,7 +108,7 @@ function createLabel({ x: cX, z: cZ }) {
         loader.load('fonts/helvetiker_regular.typeface.json', 
             (font) => {
                 const message = `${cX}, ${cZ}`;
-                const matLite = new MeshBasicMaterial({
+                const material = new MeshBasicMaterial({
                     color: '#000',
                     // transparent: true,
                     // opacity: 0.4,
@@ -123,7 +120,7 @@ function createLabel({ x: cX, z: cZ }) {
                 geometry.computeBoundingBox();
                 // geometry.rotateX(-90 * ThreeMath.DEG2RAD);
                 const xMid = - 0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
-                const text = new Mesh(geometry, matLite);
+                const text = new Mesh(geometry, material);
                 text.rotateX(-90 * ThreeMath.DEG2RAD);
                 text.position.x = xMid;
                 text.position.y = 0.1
