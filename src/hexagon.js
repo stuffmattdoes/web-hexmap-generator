@@ -18,7 +18,6 @@ import {
     WireframeGeometry
 } from 'three';
 // import * as THREE from 'three';
-import { scene } from './index.js';
 
 const outerRadius = 5;
 const innerRadius = outerRadius * 0.866025404;
@@ -26,6 +25,9 @@ const innerRadius = outerRadius * 0.866025404;
 function HexGrid(width, height) {
     let hexGrid = new Group();
     hexGrid.name = 'HexGrid';
+
+    hexGrid.position.x = (-width / 2) * outerRadius;
+    hexGrid.position.z = -(height / 2) * outerRadius;
 
     for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
@@ -41,6 +43,7 @@ function HexGrid(width, height) {
 // Hexagon
 function Hexagon({ x: cX, y: cY, z: cZ}) {
     this.coordinates = {
+        // x: cX - cZ / 2,
         x: cX,
         y: cY,
         z: cZ
@@ -65,7 +68,6 @@ function Hexagon({ x: cX, y: cY, z: cZ}) {
     const geometry = new ShapeBufferGeometry(shape);
     geometry.name = 'Hexagon';
     geometry.rotateX(-90 * ThreeMath.DEG2RAD);
-    geometry.translate(this.position.x, 0, this.position.z);
     geometry.computeBoundingSphere();
     const color = '#' + Math.random().toString(16).slice(2, 8);
     const material = new MeshBasicMaterial({ color: color });
@@ -78,51 +80,59 @@ function Hexagon({ x: cX, y: cY, z: cZ}) {
     //     side: THREE.DoubleSide, vertexColors: THREE.VertexColors
     // });
 
-    const mesh = new Mesh(geometry, material);
-    mesh.name = 'Hexagon';
+    const hexagon = new Mesh(geometry, material);
+    hexagon.name = 'Hexagon';
 
-    // Wireframe
+    hexagon.position.x = this.position.x;
+    hexagon.position.z = this.position.z;
+
+    createLabel(this.coordinates).then(text => hexagon.add(text));
+    const wireframe = createWireframe(this.geometry);
+    hexagon.add(wireframe);
+
+	return hexagon;
+}
+
+function createWireframe(geometry) {
     const wireframe = new WireframeGeometry(geometry);
     const line = new LineSegments(wireframe);
+    
     line.material.depthTest = false;
     line.material.opacity = 0.25;
     line.material.transparent = true;
-    scene.add(line);
 
-    label(this.coordinates, this.position);
-
-	return mesh;
+    return line
 }
 
-Hexagon.prototype = {
-    active: function() {
-        console.log('active', this.coordinates);
-    },
-    hover: function() {
-        console.log('hover', this.coordinates);
-    }
-}
-
-function label({ x: cX, z: cZ }, { x, z }) {
+function createLabel({ x: cX, z: cZ }) {
     const loader = new FontLoader();
-    loader.load('fonts/helvetiker_regular.typeface.json', function(font) {
-        const message = `${cX}, ${cZ}`;
-        const matLite = new MeshBasicMaterial({
-            color: '#000',
-            // transparent: true,
-            // opacity: 0.4,
-            // side: THREE.DoubleSide
-        });
 
-        const shapes = font.generateShapes(message, 1.5);
-        const geometry = new ShapeBufferGeometry(shapes);
-        geometry.computeBoundingBox();
-        geometry.rotateX( -90 * ThreeMath.DEG2RAD)
-        const xMid = - 0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
-        geometry.translate(x + xMid, 0.1, z + 1);
-        const text = new Mesh(geometry, matLite);
-        // text.rotation.x = -90 * ThreeMath.DEG2RAD;
-        scene.add(text);
+    return new Promise((resolve, reject) => {
+        loader.load('fonts/helvetiker_regular.typeface.json', 
+            (font) => {
+                const message = `${cX}, ${cZ}`;
+                const matLite = new MeshBasicMaterial({
+                    color: '#000',
+                    // transparent: true,
+                    // opacity: 0.4,
+                    // side: THREE.DoubleSide
+                });
+
+                const shapes = font.generateShapes(message, 1.5);
+                const geometry = new ShapeBufferGeometry(shapes);
+                geometry.computeBoundingBox();
+                // geometry.rotateX(-90 * ThreeMath.DEG2RAD);
+                const xMid = - 0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
+                const text = new Mesh(geometry, matLite);
+                text.rotateX(-90 * ThreeMath.DEG2RAD);
+                text.position.x = xMid;
+                text.position.y = 0.1
+                text.position.z = 1;
+
+                return resolve(text);
+            }),
+            console.log,
+            reject
     });
 }
 

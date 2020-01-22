@@ -12,6 +12,7 @@ import {
 	Vector2
 } from 'three';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
+// import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import { WEBGL } from './webGL';
 
 // Game Objects
@@ -80,8 +81,8 @@ function createScene() {
 	const nearPlane = 1;
 	const farPlane = 10000;
 	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-	camera.position.set(0, 25, 15);
-	camera.rotation.set(10, 10, 10);
+	camera.position.set(0, 55, 50);
+	// camera.rotation.set(10, 10, 10);
 
 	// Interaction
 	mouse = new Vector2();
@@ -90,7 +91,7 @@ function createScene() {
 	// Renderer
 	renderer = new WebGLRenderer({ 
 		alpha: true, 
-		antialias: true 
+		antialias: true
 	});
 
 	renderer.setSize(WIDTH, HEIGHT);
@@ -104,10 +105,13 @@ function createScene() {
 function createutilities() {
 	const grid = new GridHelper(100, 20, '#FF9933', '#fff');
 	scene.add(grid);
+
+	// var gui = new GUI();
+	// gui.add({ 'GUI Parameter': false }, 'GUI Parameter');
 }
 
 function createObjects() {
-	hexGrid = new HexGrid(6, 6);
+	hexGrid = new HexGrid(10, 10);
 	scene.add(hexGrid);
 }
 
@@ -145,7 +149,7 @@ function onMouseMove({ clientX, clientY }) {
 		(clientX / window.innerWidth) * 2 - 1,
 		-(clientY / window.innerHeight) * 2 + 1
 	);
-	console.log(intersected && intersected.originalMaterial);
+	// console.log(intersected && intersected.originalMaterial);
 }
 
 function initialize() {
