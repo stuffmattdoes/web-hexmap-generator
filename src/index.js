@@ -13,7 +13,7 @@ import {
 } from 'three';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
 // import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
-import { WEBGL } from './webGL';
+import { WEBGL } from 'three/examples/jsm/webGL';
 
 // Game Objects
 import HexGrid from './hexagon';

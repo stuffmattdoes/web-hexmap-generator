@@ -14,10 +14,10 @@ import {
     ShapeBufferGeometry,
     // ShapeGeometry,
     Vector2,
-    Vector3,
+    // Vector3,
     WireframeGeometry
 } from 'three';
-import { scene } from '.';
+// import { scene } from '.';
 // import * as THREE from 'three';
 
 const outerRadius = 5;
@@ -88,7 +88,6 @@ function Hexagon(cX, cY, cZ) {
     const wireframe = createWireframe(geometry);
     hexagon.add(wireframe);
 
-    // console.log(hexagon);
 	return hexagon;
 }
 
