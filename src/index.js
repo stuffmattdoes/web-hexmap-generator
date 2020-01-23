@@ -4,7 +4,7 @@ import {
 	// FogExp2,
 	GridHelper,
 	HemisphereLight,
-	Material,
+	// Material,
 	PerspectiveCamera,
 	Raycaster,
 	Scene,
@@ -111,9 +111,8 @@ function createutilities() {
 }
 
 function createObjects() {
-	hexGrid = new HexGrid(10, 10);
+	hexGrid = new HexGrid(12, 12);
 	scene.add(hexGrid);
-	console.log(scene);
 }
 
 function onWindowResize() {

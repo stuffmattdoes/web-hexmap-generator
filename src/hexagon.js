@@ -1,7 +1,9 @@
 import {
-    // BufferAttribute,
-    // BufferGeometry,
+    BufferAttribute,
+    BufferGeometry,
+    // Face3,
     FontLoader,
+    // Geometry,
     Group,
     // Line,
     // LineBasicMaterial,
@@ -10,11 +12,11 @@ import {
     Mesh,
     MeshBasicMaterial,
     // MeshPhongMaterial,
-    Shape,
+    // Shape,
     ShapeBufferGeometry,
     // ShapeGeometry,
-    Vector2,
-    // Vector3,
+    // Vector2,
+    Vector3,
     WireframeGeometry
 } from 'three';
 // import { scene } from '.';
@@ -22,6 +24,8 @@ import {
 
 const outerRadius = 5;
 const innerRadius = outerRadius * 0.866025404;
+const solidArea = 0.75;	
+const blendArea = 1 - solidArea;
 
 function HexGrid(width, height) {
     let hexGrid = new Group();
@@ -51,22 +55,30 @@ function Hexagon(cX, cY, cZ) {
         y: 0,
         z: cZ * (outerRadius * 1.5)
     }
-
-    const points = [
-        new Vector2(0, 0),
-        new Vector2(0, outerRadius),
-        new Vector2(innerRadius, 0.5 * outerRadius),
-		new Vector2(innerRadius, -0.5 * outerRadius),
-		new Vector2(0, -outerRadius),
-		new Vector2(-innerRadius, -0.5 * outerRadius),
-        new Vector2(-innerRadius, 0.5 * outerRadius),
-        new Vector2(0, outerRadius)
+    const corners = [
+		new Vector3(0, 0, -outerRadius),
+        new Vector3(innerRadius, 0, -0.5 * outerRadius),
+		new Vector3(innerRadius, 0, 0.5 * outerRadius),
+        new Vector3(0, 0, outerRadius),
+		new Vector3(-innerRadius, 0, 0.5 * outerRadius),
+		new Vector3(-innerRadius, 0, -0.5 * outerRadius)
     ];
-	let shape = new Shape(points);
-    const geometry = new ShapeBufferGeometry(shape);
+    const points = [];
+
+    for (let i = 0; i < corners.length; i++) {
+        const c1 = corners[i];
+        const c2 = corners[i + 1] || corners[0];
+
+        points.push(0, 0, 0);
+        points.push(c2.x * solidArea, 0, c2.z * solidArea);
+        points.push(c1.x * solidArea, 0, c1.z * solidArea);
+    }
+
+    const vertices = new Float32Array(points);
+    const geometry = new BufferGeometry().setFromPoints(vertices);
+    geometry.setAttribute('position', new BufferAttribute(vertices, 3));
     geometry.name = 'Hexagon';
-    geometry.rotateX(-90 * ThreeMath.DEG2RAD);
-    geometry.computeBoundingSphere();
+    // geometry.rotateX(-90 * ThreeMath.DEG2RAD);
     const color = '#' + Math.random().toString(16).slice(2, 8);
     const material = new MeshBasicMaterial({ color: color });
 
