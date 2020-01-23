@@ -17,6 +17,7 @@ import {
     Vector3,
     WireframeGeometry
 } from 'three';
+import { scene } from '.';
 // import * as THREE from 'three';
 
 const outerRadius = 5;
@@ -84,9 +85,10 @@ function Hexagon(cX, cY, cZ) {
     hexagon.position.z = this.position.z;
 
     createLabel(this.coordinates).then(text => hexagon.add(text));
-    const wireframe = createWireframe(this.geometry);
+    const wireframe = createWireframe(geometry);
     hexagon.add(wireframe);
 
+    // console.log(hexagon);
 	return hexagon;
 }
 
@@ -118,7 +120,6 @@ function createLabel({ x: cX, z: cZ }) {
                 const shapes = font.generateShapes(message, 1.5);
                 const geometry = new ShapeBufferGeometry(shapes);
                 geometry.computeBoundingBox();
-                // geometry.rotateX(-90 * ThreeMath.DEG2RAD);
                 const xMid = - 0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
                 const text = new Mesh(geometry, material);
                 text.rotateX(-90 * ThreeMath.DEG2RAD);

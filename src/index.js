@@ -113,6 +113,7 @@ function createutilities() {
 function createObjects() {
 	hexGrid = new HexGrid(10, 10);
 	scene.add(hexGrid);
+	console.log(scene);
 }
 
 function onWindowResize() {
