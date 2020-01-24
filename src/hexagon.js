@@ -63,67 +63,31 @@ function Hexagon(cX, cY, cZ) {
 		new Vector3(innerRadius, 0, 0.5 * outerRadius),
         new Vector3(0, 0, outerRadius),
 		new Vector3(-innerRadius, 0, 0.5 * outerRadius),
-		new Vector3(-innerRadius, 0, -0.5 * outerRadius)
+        new Vector3(-innerRadius, 0, -0.5 * outerRadius)
     ];
-    // const points = [];
-
-    // for (let i = 0; i < corners.length; i++) {
-    //     const c1 = corners[i];
-    //     const c2 = corners[i + 1] || corners[0];
-
-    //     // Solid area
-    //     points.push(0, 0, 0);
-    //     points.push(c2.x * solidArea, 0, c2.z * solidArea);
-    //     points.push(c1.x * solidArea, 0, c1.z * solidArea);
-    // }
-
-    // const vertices = new Float32Array(points);
-    // const geometry = new BufferGeometry().setFromPoints(vertices);
-    // geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-
     const geometry = new Geometry();
 
-    // Solid area
+    // begin: center, solid area, border area
     geometry.vertices.push(new Vector3(0, 0, 0));
-    geometry.vertices.push(new Vector3(corners[0].x * solidArea, 0, corners[0].z * solidArea)); // NE
-    geometry.vertices.push(new Vector3(corners[1].x * solidArea, 0, corners[1].z * solidArea)); // E
-    geometry.vertices.push(new Vector3(corners[2].x * solidArea, 0, corners[2].z * solidArea)); // SE
-    geometry.vertices.push(new Vector3(corners[3].x * solidArea, 0, corners[3].z * solidArea)); // SW
-    geometry.vertices.push(new Vector3(corners[4].x * solidArea, 0, corners[4].z * solidArea)); // W
-    geometry.vertices.push(new Vector3(corners[5].x * solidArea, 0, corners[5].z * solidArea)); // NW
-    geometry.faces.push(new Face3(0, 2, 1));
-    geometry.faces.push(new Face3(0, 3, 2));
-    geometry.faces.push(new Face3(0, 4, 3));
-    geometry.faces.push(new Face3(0, 5, 4));
-    geometry.faces.push(new Face3(0, 6, 5));
-    geometry.faces.push(new Face3(0, 1, 6));
+    geometry.vertices.push(new Vector3(corners[0].x * solidArea, 0, corners[0].z * solidArea));
+    geometry.vertices.push(corners[0]);
 
-    // Blend area
-    geometry.vertices.push(corners[0]); // 7
-    geometry.vertices.push(corners[1]); // 8
-    geometry.faces.push(new Face3(1, 8, 7));
-    geometry.faces.push(new Face3(1, 2, 8));
+    for (let i = 0; i < corners.length; i++) {
+        if (i > 0) {
+            // solid area, border area
+            geometry.vertices.push(new Vector3(corners[i].x * solidArea, 0, corners[i].z * solidArea));
+            geometry.vertices.push(corners[i]);
 
-    geometry.vertices.push(corners[2]);
-    geometry.faces.push(new Face3(2, 9, 8));
-    geometry.faces.push(new Face3(2, 3, 9));
+            geometry.faces.push(new Face3(0, i + i + 1, i + i - 1)); // (0, 7, 5)
+            geometry.faces.push(new Face3(i + i - 1, i + i + 1, i * 2)); // (5, 7, 6)
+            geometry.faces.push(new Face3(i * 2 + 1, i * 2 + 2, i * 2)); // (7, 8, 6)
+        }
+    }
 
-    geometry.vertices.push(corners[3]);
-    geometry.faces.push(new Face3(3, 10, 9));
-    geometry.faces.push(new Face3(3, 4, 10));
-
-    geometry.vertices.push(corners[4]);
-    geometry.faces.push(new Face3(4, 11, 10));
-    geometry.faces.push(new Face3(4, 5, 11));
-
-    geometry.vertices.push(corners[5]);
-    geometry.faces.push(new Face3(5, 12, 11));
-    geometry.faces.push(new Face3(5, 6, 12));
-
-    // geometry.vertices.push(corners[6]);
-    geometry.faces.push(new Face3(6, 7, 12));
-    geometry.faces.push(new Face3(6, 1, 7));
-    // geometry.faces.push(new Face3(6, 7, 1));
+    // end
+    geometry.faces.push(new Face3(0, 1, 11)); // 6
+    geometry.faces.push(new Face3(1, 12, 11));
+    geometry.faces.push(new Face3(1, 2, 12));
 
     geometry.computeVertexNormals();
     geometry.normalsNeedUpdate = true;
