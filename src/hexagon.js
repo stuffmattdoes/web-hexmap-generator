@@ -1,7 +1,8 @@
 import {
-    BufferAttribute,
-    BufferGeometry,
-    // Face3,
+    // BufferAttribute,
+    // BufferGeometry,
+    // Color,
+    Face3,
     FontLoader,
     // Geometry,
     Group,
@@ -17,7 +18,8 @@ import {
     // ShapeGeometry,
     // Vector2,
     Vector3,
-    WireframeGeometry
+    WireframeGeometry,
+    Geometry
 } from 'three';
 // import { scene } from '.';
 // import * as THREE from 'three';
@@ -63,20 +65,68 @@ function Hexagon(cX, cY, cZ) {
 		new Vector3(-innerRadius, 0, 0.5 * outerRadius),
 		new Vector3(-innerRadius, 0, -0.5 * outerRadius)
     ];
-    const points = [];
+    // const points = [];
 
-    for (let i = 0; i < corners.length; i++) {
-        const c1 = corners[i];
-        const c2 = corners[i + 1] || corners[0];
+    // for (let i = 0; i < corners.length; i++) {
+    //     const c1 = corners[i];
+    //     const c2 = corners[i + 1] || corners[0];
 
-        points.push(0, 0, 0);
-        points.push(c2.x * solidArea, 0, c2.z * solidArea);
-        points.push(c1.x * solidArea, 0, c1.z * solidArea);
-    }
+    //     // Solid area
+    //     points.push(0, 0, 0);
+    //     points.push(c2.x * solidArea, 0, c2.z * solidArea);
+    //     points.push(c1.x * solidArea, 0, c1.z * solidArea);
+    // }
 
-    const vertices = new Float32Array(points);
-    const geometry = new BufferGeometry().setFromPoints(vertices);
-    geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+    // const vertices = new Float32Array(points);
+    // const geometry = new BufferGeometry().setFromPoints(vertices);
+    // geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+
+    const geometry = new Geometry();
+
+    // Solid area
+    geometry.vertices.push(new Vector3(0, 0, 0));
+    geometry.vertices.push(new Vector3(corners[0].x * solidArea, 0, corners[0].z * solidArea)); // NE
+    geometry.vertices.push(new Vector3(corners[1].x * solidArea, 0, corners[1].z * solidArea)); // E
+    geometry.vertices.push(new Vector3(corners[2].x * solidArea, 0, corners[2].z * solidArea)); // SE
+    geometry.vertices.push(new Vector3(corners[3].x * solidArea, 0, corners[3].z * solidArea)); // SW
+    geometry.vertices.push(new Vector3(corners[4].x * solidArea, 0, corners[4].z * solidArea)); // W
+    geometry.vertices.push(new Vector3(corners[5].x * solidArea, 0, corners[5].z * solidArea)); // NW
+    geometry.faces.push(new Face3(0, 2, 1));
+    geometry.faces.push(new Face3(0, 3, 2));
+    geometry.faces.push(new Face3(0, 4, 3));
+    geometry.faces.push(new Face3(0, 5, 4));
+    geometry.faces.push(new Face3(0, 6, 5));
+    geometry.faces.push(new Face3(0, 1, 6));
+
+    // Blend area
+    geometry.vertices.push(corners[0]); // 7
+    geometry.vertices.push(corners[1]); // 8
+    geometry.faces.push(new Face3(1, 8, 7));
+    geometry.faces.push(new Face3(1, 2, 8));
+
+    geometry.vertices.push(corners[2]);
+    geometry.faces.push(new Face3(2, 9, 8));
+    geometry.faces.push(new Face3(2, 3, 9));
+
+    geometry.vertices.push(corners[3]);
+    geometry.faces.push(new Face3(3, 10, 9));
+    geometry.faces.push(new Face3(3, 4, 10));
+
+    geometry.vertices.push(corners[4]);
+    geometry.faces.push(new Face3(4, 11, 10));
+    geometry.faces.push(new Face3(4, 5, 11));
+
+    geometry.vertices.push(corners[5]);
+    geometry.faces.push(new Face3(5, 12, 11));
+    geometry.faces.push(new Face3(5, 6, 12));
+
+    // geometry.vertices.push(corners[6]);
+    geometry.faces.push(new Face3(6, 7, 12));
+    geometry.faces.push(new Face3(6, 1, 7));
+    // geometry.faces.push(new Face3(6, 7, 1));
+
+    geometry.computeVertexNormals();
+    geometry.normalsNeedUpdate = true;
     geometry.name = 'Hexagon';
     // geometry.rotateX(-90 * ThreeMath.DEG2RAD);
     const color = '#' + Math.random().toString(16).slice(2, 8);
