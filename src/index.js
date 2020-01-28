@@ -1,5 +1,7 @@
 import {
+	AmbientLight,
 	Color,
+	DirectionalLight,
 	Fog,
 	// FogExp2,
 	GridHelper,
@@ -42,27 +44,25 @@ function createControls() {
 }
 
 function createLighting() {
-	// const ambientLight = new AmbientLight('#222222');
+	const ambientLight = new AmbientLight('#222');
 	const sky = '#aaa';
 	const ground = '#000';
-	const hemisphereLight = new HemisphereLight(sky, ground, .9);
-	// const directionalLight = new THREE.DirectionalLight('#fff', .9);
-	// directionalLight.position.set(150, 350, 350);
-	// directionalLight.castShadow = true;
-	// directionalLight.shadow.camera.left = -400;		// Directional shadows visible area constraints
-	// directionalLight.shadow.camera.right = 400;
-	// directionalLight.shadow.camera.top = 400;
-	// directionalLight.shadow.camera.bottom = -400;
-	// directionalLight.shadow.camera.near = 1;
-	// directionalLight.shadow.camera.far = 1000;
-
-	// // Shadow resolution
-	// directionalLight.shadow.mapSize.width = 2048;
-	// directionalLight.shadow.mapSize.height = 2048;
+	const hemisphereLight = new HemisphereLight(sky, ground, .6);
+	const directionalLight = new DirectionalLight('#fff', .6);
+	directionalLight.position.set(150, 350, 350);
+	directionalLight.castShadow = true;
+	directionalLight.shadow.camera.left = -400;		// Directional shadows visible area constraints
+	directionalLight.shadow.camera.right = 400;
+	directionalLight.shadow.camera.top = 400;
+	directionalLight.shadow.camera.bottom = -400;
+	directionalLight.shadow.camera.near = 1;
+	directionalLight.shadow.camera.far = 1000;
+	directionalLight.shadow.mapSize.width = 2048;	// Shadow resolution
+	directionalLight.shadow.mapSize.height = 2048;
 
 	scene.add(hemisphereLight);
-	// scene.add(directionalLight);
-	// scene.add(ambientLight);
+	scene.add(directionalLight);
+	scene.add(ambientLight);
 }
 
 function createScene() {
