@@ -62,7 +62,7 @@ function Hexagon(cX, cY, cZ, index, w) {
         z: cZ,
     }
     this.coordinates.y = -1 * this.coordinates.x - this.coordinates.z;
-    this.neighbors = {
+    const neighbors = {
         NW: cZ > 0 && cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1],
         NE: cZ > 0 && cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w],
         E: null,
@@ -73,7 +73,7 @@ function Hexagon(cX, cY, cZ, index, w) {
 
     this.position = {
         x: (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        y: Math.floor(Math.random() * 10) - 5,
+        y: Math.floor(Math.random() * 10) - 3,
         z: cZ * (outerRadius * 1.5)
     }
     const corners = [
@@ -88,24 +88,30 @@ function Hexagon(cX, cY, cZ, index, w) {
 
     // begin: center, solid area, border area
     geometry.vertices.push(new Vector3(0, this.position.y, 0));
-    const color = new Color('#' + Math.random().toString(16).slice(2, 8));
-    // geometry.colors.push(color);
+    // const color = new Color('#' + Math.random().toString(16).slice(2, 8));
+    const color = new Color(this.position.y < 0 ? '#0000FF' 
+        : this.position.y < 1 ? '#FFFF00'
+        : this.position.y < 2 ? '#00FF00'
+        : this.position.y < 4 ? '#654321'
+        : '#FFF');
+    // console.log(color);
+    geometry.colors.push(color);
     let blendColor;
 
     for (let i = 0; i < corners.length; i++) {
         blendColor = color;
         geometry.vertices.push(new Vector3(corners[i].x * solidArea, this.position.y, corners[i].z * solidArea));
         geometry.vertices.push(corners[i]);
-        geometry.colors.push(color);
+        // geometry.colors.push(color);
         // geometry.colors.push(color);
 
         if (i > 0) {
             geometry.faces.push(new Face3(0, i + i + 1, i + i - 1, null, color));   // Face
 
-            if (i === 5 && this.neighbors.W) {
-                blendColor = this.neighbors.W.mesh.geometry.colors[1];
-            } else if (i === 1 && this.neighbors.NE) {
-                blendColor = this.neighbors.NE.mesh.geometry.colors[1];
+            if (i === 5 && neighbors.W) {
+                blendColor = neighbors.W.mesh.geometry.colors[0];
+            } else if (i === 1 && neighbors.NE) {
+                blendColor = neighbors.NE.mesh.geometry.colors[0];
             }
 
             geometry.faces.push(new Face3(i + i - 1, i + i + 1, i * 2, null, [ color, color, blendColor ]));   // Border
@@ -114,8 +120,8 @@ function Hexagon(cX, cY, cZ, index, w) {
     }
 
     // end
-    if (this.neighbors.NW) {
-        blendColor = this.neighbors.NW.mesh.geometry.colors[1];
+    if (neighbors.NW) {
+        blendColor = neighbors.NW.mesh.geometry.colors[0];
     }
 
     geometry.faces.push(new Face3(0, 1, 11, null, color));
