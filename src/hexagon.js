@@ -113,20 +113,20 @@ function Hexagon(cX, cY, cZ, index, w) {
                 bridgeX2 = x2,
                 bridgeZ2 = z2;
 
-            if (x === 0) {
-                // bridgeX = x + 1;
-                // bridgeZ = z * z / 2;
-                // bridgeZ2 = z2 * z2 / 2;
-            } else if (x === 1) {
-                // bridgeX = 10;
-                // bridge2 = 10;
-                // bridgeZ = z - 0.75;
-                // bridgeZ2 = z2 - 1.25;
+            if (i === 0) {
+                bridgeX = x + (x * blendArea);
+                bridgeZ = z * solidArea;
+                bridgeX2 = x2 + (x2 * blendArea);
+                bridgeZ2 = z2 * solidArea;
+            } else if (i === 1) {
+                // bridgeX = x + ((x2 - x) * 0.5 * blendArea);
+                // bridgeZ = z + ((z + z2) * 0.5 *  blendArea);
+                bridgeX2 = x2 + ((x + x2) * blendArea);
+                bridgeZ2 = z2 + ((z - z2) * blendArea);
             } else {
-                // bridgeX = 2;
-                // bridgeX2 = 2;
-                // bridgeZ = z - 0.75;
-                // bridgeZ2 = z2 - 1.25;
+                bridgeX = x + ((x + x2) * blendArea);
+                bridgeZ = z + ((z - z2) * blendArea);
+                // bridgeZ2 = z2 + (-0.5 * outerRadius);
             }
 
             geometry.vertices.push(new Vector3(bridgeX, y, bridgeZ));

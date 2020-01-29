@@ -38,7 +38,7 @@ function createControls() {
 	controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 	controls.dampingFactor = 0.05;
 	controls.screenSpacePanning = false;
-	controls.minDistance = 20;
+	controls.minDistance = 1;
 	controls.maxDistance = 100;
 	controls.maxPolarAngle = Math.PI;
 }
