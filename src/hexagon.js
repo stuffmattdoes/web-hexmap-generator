@@ -29,9 +29,7 @@ import {
 const outerRadius = 5;
 const innerRadius = outerRadius * 0.866025404;
 const solidArea = 0.75;
-// const blendArea = 1 - solidArea;
-// const dir = [ 'NE', 'E', 'SE', 'SW', 'W', 'NW' ];
-
+const blendArea = 1 - solidArea;
 let cells = [];
 
 function HexGrid(width, height) {
@@ -44,7 +42,6 @@ function HexGrid(width, height) {
         for (let x = 0; x < width; x++) {
             const hexCell = new Hexagon(x, 0, z, i, width);
             cells.push(hexCell);
-            console.log(hexCell);
             i++;
         }
     }
@@ -63,83 +60,97 @@ function Hexagon(cX, cY, cZ, index, w) {
     }
     this.coordinates.y = -1 * this.coordinates.x - this.coordinates.z;
     const neighbors = {
-        NW: cZ > 0 && cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1],
-        NE: cZ > 0 && cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w],
-        E: null,
-        SE: null,
-        SW: null,
-        W: cX > 0 && cells[index - 1]
+        W: cX > 0 ? cells[index - 1] : null,
+        NW: cZ > 0? cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1] : null,
+        NE: cZ > 0 ? cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w] : null,
+        // E: null,
+        // SE: null,
+        // SW: null,
     }
-
     this.position = {
         x: (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        y: Math.floor(Math.random() * 10) - 3,
+        // y: Math.floor(Math.random() * 10) - 3,
+        y: 0,
         z: cZ * (outerRadius * 1.5)
     }
     const corners = [
+		new Vector3(-innerRadius, 0, 0.5 * outerRadius),
+        new Vector3(-innerRadius, 0, -0.5 * outerRadius),
 		new Vector3(0, 0, -outerRadius),
         new Vector3(innerRadius, 0, -0.5 * outerRadius),
 		new Vector3(innerRadius, 0, 0.5 * outerRadius),
         new Vector3(0, 0, outerRadius),
-		new Vector3(-innerRadius, 0, 0.5 * outerRadius),
-        new Vector3(-innerRadius, 0, -0.5 * outerRadius)
     ];
     const geometry = new Geometry();
-
-    // begin: center, solid area, border area
-    geometry.vertices.push(new Vector3(0, this.position.y, 0));
-    // const color = new Color('#' + Math.random().toString(16).slice(2, 8));
-    const color = new Color(this.position.y < 0 ? '#0000FF' 
+    const color = new Color(this.position.y < 0 ? '#0000FF'
         : this.position.y < 1 ? '#FFFF00'
         : this.position.y < 2 ? '#00FF00'
         : this.position.y < 4 ? '#654321'
-        : '#FFF');
-    // console.log(color);
-    geometry.colors.push(color);
-    let blendColor;
+        : '#FFF'
+    );
+    // geometry.colors.push(color);
+    const colors = [ new Color('#FF0000'), new Color('#00F00F'), new Color('#0000FF') ];
+    const neighborKeys = Object.keys(neighbors);
 
-    for (let i = 0; i < corners.length; i++) {
-        blendColor = color;
-        geometry.vertices.push(new Vector3(corners[i].x * solidArea, this.position.y, corners[i].z * solidArea));
-        geometry.vertices.push(corners[i]);
-        // geometry.colors.push(color);
-        // geometry.colors.push(color);
+    // Trianglation loop
+    for (let i = 0, faceI = 0; i < corners.length; i++) {
+        const { x, z } = corners[i];
+        const { y } = this.position;
+        const { x: x2, z: z2 } = corners[i + 1] || corners[0];
 
-        if (i > 0) {
-            geometry.faces.push(new Face3(0, i + i + 1, i + i - 1, null, color));   // Face
+        // main
+        geometry.vertices.push(new Vector3(0, this.position.y, 0));
+        geometry.vertices.push(new Vector3(x * solidArea, y, z * solidArea));
+        geometry.vertices.push(new Vector3(x2 * solidArea, y, z2 * solidArea));
+        geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, colors));   // Main
+    
+        // gap
 
-            if (i === 5 && neighbors.W) {
-                blendColor = neighbors.W.mesh.geometry.colors[0];
-            } else if (i === 1 && neighbors.NE) {
-                blendColor = neighbors.NE.mesh.geometry.colors[0];
+        // bridge
+        if (i < 3) {
+            let bridgeX = x,
+                bridgeZ = z,
+                bridgeX2 = x2,
+                bridgeZ2 = z2;
+
+            if (x === 0) {
+                // bridgeX = x + 1;
+                // bridgeZ = z * z / 2;
+                // bridgeZ2 = z2 * z2 / 2;
+            } else if (x === 1) {
+                // bridgeX = 10;
+                // bridge2 = 10;
+                // bridgeZ = z - 0.75;
+                // bridgeZ2 = z2 - 1.25;
+            } else {
+                // bridgeX = 2;
+                // bridgeX2 = 2;
+                // bridgeZ = z - 0.75;
+                // bridgeZ2 = z2 - 1.25;
             }
 
-            geometry.faces.push(new Face3(i + i - 1, i + i + 1, i * 2, null, [ color, color, blendColor ]));   // Border
-            geometry.faces.push(new Face3(i * 2 + 1, i * 2 + 2, i * 2, null, [ color, blendColor, blendColor ]));   // Border
+            geometry.vertices.push(new Vector3(bridgeX, y, bridgeZ));
+            geometry.vertices.push(new Vector3(bridgeX2, y, bridgeZ2));
+            
+            geometry.faces.push(new Face3(faceI + 1, faceI + 4, faceI + 3, null, colors));   // Bridge
+            geometry.faces.push(new Face3(faceI + 2, faceI + 4, faceI + 1, null, colors));   // Bridge
+            faceI += 2;
         }
+
+        faceI += 3;
     }
 
-    // end
-    if (neighbors.NW) {
-        blendColor = neighbors.NW.mesh.geometry.colors[0];
-    }
-
-    geometry.faces.push(new Face3(0, 1, 11, null, color));
-    geometry.faces.push(new Face3(11, 1, 12, null, [ color, color, blendColor ]));
-    geometry.faces.push(new Face3(1, 2, 12, null, [ color, blendColor, blendColor ]));
-
+    console.log(geometry);
+    
+    geometry.mergeVertices();   // Remove duplicate vertices introduced in triangulation loop
     geometry.computeFaceNormals();
     // geometry.computeVertexNormals();
     // geometry.normalsNeedUpdate = true;
     geometry.name = 'Hexagon';
-    // geometry.rotateX(-90 * ThreeMath.DEG2RAD);
     const material = new MeshStandardMaterial({
         // vertexColors: FaceColors
         vertexColors: VertexColors
     });
-
-    // material.color = new THREE.Color('#ff0000');
-    // material.needsUpdate = true;
 
     this.mesh = new Mesh(geometry, material);
     this.mesh.name = 'Hexagon';
