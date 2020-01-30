@@ -111,29 +111,37 @@ function Hexagon(cX, cY, cZ, index, w) {
             let bridgeX = x,
                 bridgeZ = z,
                 bridgeX2 = x2,
-                bridgeZ2 = z2;
+                bridgeZ2 = z2,
+                tri = new Vector3(x, 0, y);
 
             if (i === 0) {
                 bridgeX = x + (x * blendArea);
                 bridgeZ = z * solidArea;
                 bridgeX2 = x2 + (x2 * blendArea);
                 bridgeZ2 = z2 * solidArea;
+                
+                // tri.z = - outerRadius * solidArea;
             } else if (i === 1) {
-                // bridgeX = x + ((x2 - x) * 0.5 * blendArea);
-                // bridgeZ = z + ((z + z2) * 0.5 *  blendArea);
+                bridgeZ = -outerRadius * solidArea;
                 bridgeX2 = x2 + ((x + x2) * blendArea);
-                bridgeZ2 = z2 + ((z - z2) * blendArea);
+                bridgeZ2 = z2 - ((z - z2) * blendArea);
+
+                // tri.x = x + ((x + x2) * blendArea);
             } else {
                 bridgeX = x + ((x + x2) * blendArea);
                 bridgeZ = z + ((z - z2) * blendArea);
-                // bridgeZ2 = z2 + (-0.5 * outerRadius);
+                bridgeZ2 = -outerRadius * solidArea;
+
+                // tri.x = x + ((x + x2) * blendArea);
             }
 
-            geometry.vertices.push(new Vector3(bridgeX, y, bridgeZ));
-            geometry.vertices.push(new Vector3(bridgeX2, y, bridgeZ2));
+            geometry.vertices.push(new Vector3(bridgeX, y, bridgeZ));   // Bridge
+            geometry.vertices.push(new Vector3(bridgeX2, y, bridgeZ2)); // Bridge
+            // geometry.vertices.push(tri); // Gap tri
             
             geometry.faces.push(new Face3(faceI + 1, faceI + 4, faceI + 3, null, colors));   // Bridge
             geometry.faces.push(new Face3(faceI + 2, faceI + 4, faceI + 1, null, colors));   // Bridge
+            // geometry.faces.push(new Face3(faceI + 2, faceI + 1, faceI + 4, null, colors));   // Gap tri
             faceI += 2;
         }
 
