@@ -21,7 +21,8 @@ import {
     // Vector2,
     VertexColors,
     Vector3,
-    WireframeGeometry
+    WireframeGeometry,
+    Vector2
 } from 'three';
 // import { scene } from '.';
 // import * as THREE from 'three';
@@ -64,20 +65,19 @@ function Hexagon(cX, cY, cZ, index, w) {
         NW: cZ > 0? cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1] : null,
         NE: cZ > 0 ? cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w] : null,
     }
-    this.position = {
-        x: (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        y: Math.floor(Math.random() * 10) - 3,
-        // y: 0,
-        z: cZ * (outerRadius * 1.5)
-    }
-    const corners = [
-		new Vector3(-innerRadius, 0, 0.5 * outerRadius),
-        new Vector3(-innerRadius, 0, -0.5 * outerRadius),
-		new Vector3(0, 0, -outerRadius),
-        new Vector3(innerRadius, 0, -0.5 * outerRadius),
-		new Vector3(innerRadius, 0, 0.5 * outerRadius),
-        new Vector3(0, 0, outerRadius),
-    ];
+    this.position = new Vector3(
+        (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
+        Math.floor(Math.random() * 10) - 3,
+        cZ * (outerRadius * 1.5)
+    );
+    const corners = {
+		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius),
+        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius),
+		N: new Vector3(0, 0, -outerRadius),
+        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius),
+		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius),
+        S: new Vector3(0, 0, outerRadius),
+    };
     const geometry = new Geometry();
     const color = new Color(this.position.y < 0 ? '#0000FF'
         : this.position.y < 1 ? '#FFFF00'
@@ -87,13 +87,14 @@ function Hexagon(cX, cY, cZ, index, w) {
     );
     geometry.colors.push(color);
     // const colors = [ new Color('#FF0000'), new Color('#00F00F'), new Color('#0000FF') ];
-    // const neighborKeys = Object.keys(neighbors);
 
     // Trianglation loop
-    for (let i = 0, faceI = 0; i < corners.length; i++) {
-        const { x, z } = corners[i];
+    const cornersKeys = Object.keys(corners);
+
+    for (let i = 0, faceI = 0; i < cornersKeys.length; i++) {
+        const { x, z } = corners[cornersKeys[i]];
         const { y } = this.position;
-        const { x: x2, z: z2 } = corners[i + 1] || corners[0];
+        const { x: x2, z: z2 } = corners[cornersKeys[i + 1]] || corners.SW;
 
         // main
         geometry.vertices.push(new Vector3(0, this.position.y, 0));
@@ -102,91 +103,41 @@ function Hexagon(cX, cY, cZ, index, w) {
         geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, color));
 
         if (i < 3) {
-            let b = new Vector3(x, y, z),
-                bColors = [ color, color, color ],
-                b2 = new Vector3(x2, y, z2),
-                b2Colors = [ color, color, color ],
-                tri = new Vector3(x, y, z),
-                triColors = [ color, color, color ];
+            let cornerKeys = Object.keys(corners),
+                dir = Object.keys(neighbors),
+                neighbor = neighbors[dir[i]],
+                nextNeighbor = neighbors[dir[i + 1]];
 
-            if (i === 0) {
-                // West bridge
-                b.x = x + (x * blendArea);
-                b.z = z * solidArea;
-                b2.x = x2 + (x2 * blendArea);
-                b2.z = z2 * solidArea;
+            if (neighbor) {
+                const corner = cornerKeys[i + 3],
+                    nextCorner = cornerKeys[i + 4] || cornerKeys[i - 2];
+                let { mesh: { geometry: { colors: neighborColors }}, position } = neighbor;
+                const diff = new Vector3().subVectors(position, this.position);
 
-                if (neighbors.W) {
-                    const { mesh, position } = neighbors.W;
-                    const neighborColor = mesh.geometry.colors[0];
+                const b = new Vector3(diff.x + corners[corner].x * solidArea, position.y, diff.z + corners[corner].z * solidArea);
+                const b2 = new Vector3(diff.x + corners[nextCorner].x * solidArea, position.y, diff.z + corners[nextCorner].z * solidArea);
+                const bColors = [ color, color, neighborColors[0] ];
+                const b1Colors = [ color, neighborColors[0], neighborColors[0] ];
 
-                    b.y = b2.y = position.y;
-                    bColors = [ color, neighborColor, neighborColor ];
-                    b2Colors = [ color, color, neighborColor ];
-                    triColors[2] = neighborColor;
+                geometry.vertices.push(b);
+                geometry.vertices.push(b2);
+                geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 3, null, bColors));
+                geometry.faces.push(new Face3(faceI + 1, faceI + 3, faceI + 4, null, b1Colors));
+
+                if (nextNeighbor && i < 2) {
+                    let { mesh: { geometry: { colors: nextNeighborColors }}, position } = nextNeighbor;
+                    const triCorner = cornerKeys[i + 5] || cornerKeys[i - 1];
+                    const nextDiff = new Vector3().subVectors(position, this.position);
+                    const tri = new Vector3(nextDiff.x + corners[triCorner].x * solidArea, position.y, nextDiff.z + corners[triCorner].z * solidArea);
+                    const triColors = [ color, nextNeighborColors[0], neighborColors[0] ];
+                    geometry.vertices.push(tri);
+                    geometry.faces.push(new Face3(faceI + 2, faceI + 5, faceI + 3, null, triColors));
+
+                    faceI += 1;
                 }
 
-                tri.z = -outerRadius * solidArea;
-
-                if (neighbors.NW) {
-                    const { mesh, position } = neighbors.NW;
-                    const neighborColor = mesh.geometry.colors[0];
-
-                    tri.y = position.y;
-                    triColors[1] = neighborColor;
-                }
-            } else if (i === 1) {
-                // North West bridge
-                b.z = -outerRadius * solidArea;
-                b2.x = x2 + ((x + x2) * blendArea);
-                b2.z = z2 - ((z - z2) * blendArea);
-
-                if (neighbors.NW) {
-                    const { mesh, position } = neighbors.NW;
-                    const neighborColor = mesh.geometry.colors[0];
-
-                    b.y = b2.y = position.y;
-                    bColors = [ color, neighborColor, neighborColor ];
-                    b2Colors = [ color, color, neighborColor ];
-                    triColors[2] = neighborColor;
-                }
-
-                tri.x = x2 - ((x + x2) * blendArea);
-                tri.z = z2 - ((z - z2) * blendArea);
-
-                if (neighbors.NE) {
-                    const { mesh, position } = neighbors.NE;
-                    const neighborColor = mesh.geometry.colors[0];
-
-                    tri.y = position.y;
-                    triColors[1] = neighborColor;
-                }
-            } else {
-                // North East bridge
-                b.x = x + ((x + x2) * blendArea);
-                b.z = z + ((z - z2) * blendArea);
-                b2.z = -outerRadius * solidArea;
-                tri = b;
-
-                if (neighbors.NE) {
-                    const { mesh, position } = neighbors.NE;
-                    const neighborColor = mesh.geometry.colors[0];
-
-                    b.y = b2.y = position.y;
-                    bColors = [ color, neighborColor, neighborColor ];
-                    b2Colors = [ color, color, neighborColor ];
-                    triColors[2] = neighborColor;
-                }
+                faceI += 2;
             }
-
-            geometry.vertices.push(b);   // bridge 1
-            geometry.vertices.push(b2); // bridge 2
-            geometry.vertices.push(tri); // Gap tri
-            
-            geometry.faces.push(new Face3(faceI + 1, faceI + 4, faceI + 3, null, bColors));   // bridge 1
-            geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 4, null, b2Colors));   // bridge 2
-            geometry.faces.push(new Face3(faceI + 2, faceI + 5, faceI + 4, null, triColors));   // Gap tri
-            faceI += 3;
         }
 
         faceI += 3;
@@ -210,9 +161,9 @@ function Hexagon(cX, cY, cZ, index, w) {
     // hexagon.position.y = Math.floor(Math.random() * 10);
     this.mesh.position.z = this.position.z;
 
-    // createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
-    // const wireframe = createWireframe(geometry);
-    // this.mesh.add(wireframe);
+    createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
+    const wireframe = createWireframe(geometry);
+    this.mesh.add(wireframe);
 
 	return this;
 }
