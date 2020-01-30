@@ -99,11 +99,8 @@ function Hexagon(cX, cY, cZ, index, w) {
         geometry.vertices.push(new Vector3(0, this.position.y, 0));
         geometry.vertices.push(new Vector3(x * solidArea, y, z * solidArea));
         geometry.vertices.push(new Vector3(x2 * solidArea, y, z2 * solidArea));
-        geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, color));   // Main
-    
-        // gap
+        geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, color));
 
-        // b
         if (i < 3) {
             let b = new Vector3(x, y, z),
                 bColors = [ color, color, color ],
@@ -195,7 +192,7 @@ function Hexagon(cX, cY, cZ, index, w) {
         faceI += 3;
     }
 
-    console.log(geometry);
+    // console.log(geometry);
     
     geometry.mergeVertices();   // Remove duplicate vertices introduced in triangulation loop
     geometry.computeFaceNormals();
