@@ -3,10 +3,8 @@ import {
 	Color,
 	DirectionalLight,
 	Fog,
-	// FogExp2,
 	GridHelper,
 	HemisphereLight,
-	// Material,
 	PerspectiveCamera,
 	Raycaster,
 	Scene,
@@ -112,7 +110,7 @@ function createutilities() {
 }
 
 function createObjects() {
-	hexGrid = new HexGrid(12, 12);
+	hexGrid = new HexGrid(24, 24);
 	scene.add(hexGrid);
 }
 

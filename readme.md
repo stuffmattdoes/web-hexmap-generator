@@ -1,7 +1,7 @@
 # Hexagonal Map Generator
-A web-based tool that randomly generates terrain organized into a hexagonal grid.
-
 ![Randomly-generated hexagonal grid](cover-image.png)
+
+A web-based tool that randomly generates terrain organized into a hexagonal grid.
 
 **Built with Three.js**
 

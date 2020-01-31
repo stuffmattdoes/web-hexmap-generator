@@ -1,47 +1,45 @@
 import {
-    // BufferAttribute,
-    // BufferGeometry,
     Color,
     Face3,
-    FaceColors,
     FontLoader,
     Geometry,
     Group,
-    // Line,
-    // LineBasicMaterial,
     LineSegments,
     Math as ThreeMath,
     Mesh,
     MeshBasicMaterial,
     MeshStandardMaterial,
-    // MeshPhongMaterial,
-    // Shape,
     ShapeBufferGeometry,
-    // ShapeGeometry,
-    // Vector2,
     VertexColors,
     Vector3,
     WireframeGeometry,
-    Vector2
 } from 'three';
-// import { scene } from '.';
-// import * as THREE from 'three';
+import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
+// import { Lut } from 'three/examples/jsm/math/Lut.js';
 
-const outerRadius = 5;
-const innerRadius = outerRadius * 0.866025404;
-const solidArea = 0.75;
-// const blendArea = 1 - solidArea;
-let cells = [];
+let outerRadius = 5,
+    innerRadius = outerRadius * 0.866025404,
+    solidArea = 0.75,
+    // lut = new Lut(),
+    // blendArea = 1 - solidArea,
+    cells = [],
+    heightMap = [],
+    heightMapRange = [];
 
 function HexGrid(width, height) {
     let hexGrid = new Group();
     hexGrid.name = 'HexGrid';
     hexGrid.position.x = -(width * innerRadius) + innerRadius;
     hexGrid.position.z = -(height * innerRadius) + innerRadius;
+    heightMap = generateHeight(width, height);
+    heightMapRange = [
+        heightMap.slice().sort()[0],
+        heightMap.slice().sort()[heightMap.length -1]
+    ];
 
     for (let z = 0, i = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
-            const hexCell = new Hexagon(x, 0, z, i, width);
+            const hexCell = new Hexagon(x, z, i, width);
             cells.push(hexCell);
             i++;
         }
@@ -53,7 +51,7 @@ function HexGrid(width, height) {
 }
 
 // Hexagon
-function Hexagon(cX, cY, cZ, index, w) {
+function Hexagon(cX, cZ, index, w) {
     this.coordinates = {
         // x: cX - (cZ - (cZ & 1)) / 2,    // "& 1" is "bitwise and"
         x: cX - (cZ - (cZ % 2)) / 2,    // Also works
@@ -61,9 +59,6 @@ function Hexagon(cX, cY, cZ, index, w) {
     };
     this.coordinates.y = -1 * this.coordinates.x - this.coordinates.z;
     const neighbors = {
-        // W: cX > 0 ? cells[index - 1] : null,
-        // NW: cZ > 0 ? cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1] : null,
-        // NE: cZ > 0 ? cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w] : null,
         W: null,
         NW: null,
         NE: null
@@ -91,7 +86,8 @@ function Hexagon(cX, cY, cZ, index, w) {
 
     this.position = new Vector3(
         (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        Math.floor(Math.random() * 10) - 3,
+        // Math.floor(Math.random() * 10) - 3,
+        heightMap[index],
         cZ * (outerRadius * 1.5)
     );
     const corners = {
@@ -103,10 +99,10 @@ function Hexagon(cX, cY, cZ, index, w) {
         S: new Vector3(0, 0, outerRadius),
     };
     const geometry = new Geometry();
-    const color = new Color(this.position.y < 0 ? '#0000FF'
-        : this.position.y < 1 ? '#FFFF00'
-        : this.position.y < 2 ? '#00FF00'
-        : this.position.y < 4 ? '#654321'
+    const color = new Color(this.position.y < heightMapRange[1] * 0.25 ? '#0000FF'
+        : this.position.y < heightMapRange[1] * 0.5 ? '#FFFF00'
+        : this.position.y < heightMapRange[1] * 0.6 ? '#00FF00'
+        : this.position.y < heightMapRange[1] * 0.8 ? '#654321'
         : '#FFF'
     );
     geometry.colors.push(color);
@@ -175,7 +171,13 @@ function Hexagon(cX, cY, cZ, index, w) {
     // geometry.computeVertexNormals();
     // geometry.normalsNeedUpdate = true;
     geometry.name = 'Hexagon';
+
+    // const displacementMap = new TextureLoader().load('img/tiling-perlin-normal.png');
+
     const material = new MeshStandardMaterial({
+        // displacementMap: displacementMap,
+		// displacementScale: 1.25,
+		// displacementBias: - 0.428408, // from original model
         // vertexColors: FaceColors
         vertexColors: VertexColors
     });
@@ -186,6 +188,12 @@ function Hexagon(cX, cY, cZ, index, w) {
     // hexagon.position.y = Math.floor(Math.random() * 10);
     this.mesh.position.z = this.position.z;
 
+    // const sprite = new Sprite(new SpriteMaterial({
+    //     map: new CanvasTexture(lut.createCanvas())
+    // }));
+    // sprite.scale.x = 0.125;
+    // this.mesh.add(sprite);
+    
     createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
     const wireframe = createWireframe(geometry);
     this.mesh.add(wireframe);
@@ -233,6 +241,26 @@ function createLabel({ x: cX, z: cZ }, y) {
             console.log,
             reject
     });
+}
+
+function generateHeight(width, height) {
+    let size = width * height,
+        data = new Uint8Array(size),
+        perlin = new ImprovedNoise(),
+        quality = 1,
+        z = Math.random() * 10;
+
+    for (let j = 0; j < 4; j ++) {
+        for (let i = 0; i < size; i ++) {
+
+            let x = i % width, y = ~ ~ ( i / width );
+            data[i] += Math.abs(perlin.noise(x / quality, y / quality, z) * quality * 1.75);
+        }
+
+        quality += 3;
+    }
+
+    return data;
 }
 
 export default HexGrid;
