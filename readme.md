@@ -1,8 +1,7 @@
 # Hexagonal Map Generator
 A web-based tool that randomly generates terrain organized into a hexagonal grid.
 
-[Randomly-generated hexagonal grid]: cover-image.png "Randomly-generated hexagonal grid"
-
+![Randomly-generated hexagonal grid](cover-image.png)
 
 **Built with Three.js**
 
@@ -10,8 +9,8 @@ A web-based tool that randomly generates terrain organized into a hexagonal grid
 - [Node.js](https://nodejs.org/en/)
 
 ## Notable Tools
-- (Parcel.js)[https://parceljs.org/] - Javscript bundler
-- (Three.js)[https://threejs.org/] - web-based 3D javascript engine
+- [Parcel.js](https://parceljs.org/) - Javscript bundler
+- [Three.js](https://threejs.org/) - web-based 3D javascript engine
 
 ## Setup
 1. `npm install`
