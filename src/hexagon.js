@@ -30,7 +30,7 @@ import {
 const outerRadius = 5;
 const innerRadius = outerRadius * 0.866025404;
 const solidArea = 0.75;
-const blendArea = 1 - solidArea;
+// const blendArea = 1 - solidArea;
 let cells = [];
 
 function HexGrid(width, height) {
@@ -58,13 +58,37 @@ function Hexagon(cX, cY, cZ, index, w) {
         // x: cX - (cZ - (cZ & 1)) / 2,    // "& 1" is "bitwise and"
         x: cX - (cZ - (cZ % 2)) / 2,    // Also works
         z: cZ,
-    }
+    };
     this.coordinates.y = -1 * this.coordinates.x - this.coordinates.z;
     const neighbors = {
-        W: cX > 0 ? cells[index - 1] : null,
-        NW: cZ > 0? cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1] : null,
-        NE: cZ > 0 ? cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w] : null,
+        // W: cX > 0 ? cells[index - 1] : null,
+        // NW: cZ > 0 ? cZ % 2 === 1 ? cells[index - w] : cells[index - w - 1] : null,
+        // NE: cZ > 0 ? cZ % 2 === 1 ? cells[index - w + 1] : cells[index - w] : null,
+        W: null,
+        NW: null,
+        NE: null
+    };
+
+    if (cX > 0) {
+        neighbors.W = cells[index - 1];
     }
+    
+    if (cZ > 0) {
+        if (cZ % 2 === 1) {
+            neighbors.NW = cells[index - w];
+
+            if (cX < w - 1) {
+                neighbors.NE = cells[index - w + 1];
+            }
+        } else {
+            neighbors.NE = cells[index - w];
+
+            if (cX > 0) {
+                neighbors.NW = cells[index - w - 1];
+            }
+        }
+    }
+
     this.position = new Vector3(
         (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
         Math.floor(Math.random() * 10) - 3,
@@ -102,6 +126,7 @@ function Hexagon(cX, cY, cZ, index, w) {
         geometry.vertices.push(new Vector3(x2 * solidArea, y, z2 * solidArea));
         geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, color));
 
+        // We only need the first three bridges to prevent overlapping
         if (i < 3) {
             let cornerKeys = Object.keys(corners),
                 dir = Object.keys(neighbors),
