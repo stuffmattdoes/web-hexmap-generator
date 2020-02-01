@@ -12,8 +12,12 @@ import {
 	Vector2
 } from 'three';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 // import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import { WEBGL } from 'three/examples/jsm/webGL';
+import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 // Game Objects
 import HexGrid from './hexagon';
@@ -23,9 +27,11 @@ let HEIGHT,
 	camera,
 	controls,
 	mouse,
+	postprocessing = {},
 	raycaster,
 	renderer,
-	scene;
+	scene,
+	stats;
 
 let hexGrid,
 	intersects,
@@ -112,12 +118,19 @@ function createutilities() {
 function createObjects() {
 	hexGrid = new HexGrid(24, 24);
 	scene.add(hexGrid);
+	console.log(scene);
+}
+
+function createStats() {
+	stats = new Stats();
+	document.body.appendChild(stats.dom);
 }
 
 function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	postprocessing.composer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function update() {
@@ -137,6 +150,8 @@ function update() {
 
 	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
 	renderer.render(scene, camera);
+	// postprocessing.composer.render(0.1);
+	stats.update();
 	requestAnimationFrame(update);
 }
 
@@ -151,12 +166,33 @@ function onMouseMove({ clientX, clientY }) {
 	// console.log(intersected && intersected.originalMaterial);
 }
 
+function postProcessing() {
+	const renderPass = new RenderPass(scene, camera);
+	const bokehPass = new BokehPass(scene, camera, {
+		focus: .1,
+		aperture: 1.5,
+		maxblur: .05,
+		width: WIDTH,
+		height: HEIGHT
+	} );
+
+	const composer = new EffectComposer(renderer);
+
+	composer.addPass(renderPass);
+	composer.addPass(bokehPass);
+
+	postprocessing.composer = composer;
+	postprocessing.bokeh = bokehPass;
+}
+
 function initialize() {
 	createScene();
 	createControls();
 	createLighting();
 	createutilities();
 	createObjects();
+	createStats();
+	// postProcessing();
 	update();
 }
 

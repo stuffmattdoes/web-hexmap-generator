@@ -17,38 +17,56 @@ import {
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
 import { randomRange } from './util';
+import SimplexNoise from 'simplex-noise';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
     solidArea = 0.75,
+    simplex,
     // lut = new Lut(),
     // blendArea = 1 - solidArea,
-    cells = [],
-    heightMap = [],
-    heightMapRange = [];
+    cells = [];
+    // heightMap = [],
+    // heightMapRange = [];
 
 function HexGrid(width, height) {
-    let hexGrid = new Group();
-    hexGrid.name = 'HexGrid';
-    hexGrid.position.x = -(width * innerRadius) + innerRadius;
-    hexGrid.position.z = -(height * innerRadius) + innerRadius;
-    heightMap = generateHeight(width, height);
-    heightMapRange = [
-        heightMap.slice().sort()[0],
-        heightMap.slice().sort()[heightMap.length -1]
-    ];
+    const grid = new Geometry();
+    const group = new Group();
+    grid.name = 'HexGrid';
+    // heightMap = generateHeight(width, height);
+    // heightMapRange = [
+    //     heightMap.slice().sort()[0],
+    //     heightMap.slice().sort()[heightMap.length -1]
+    // ];
+
+    simplex = new SimplexNoise('seed');
 
     for (let z = 0, i = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const hexCell = new Hexagon(x, z, i, width);
+            // grid.mergeMesh(hexCell.mesh);
+            // grid.mergeVertices();
             cells.push(hexCell);
             i++;
         }
     }
 
-    hexGrid.add(...cells.map(c => c.mesh));
+    grid.verticesNeedUpdate = true;
 
-    return hexGrid;
+    const material = new MeshStandardMaterial({
+        vertexColors: VertexColors
+    });
+    const mesh = new Mesh(grid, material);
+    mesh.name = 'Hexagon';
+    mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
+    mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
+
+    group.position.x = -(width * innerRadius) + (innerRadius / 2);
+    group.position.z = -(height * innerRadius) + (innerRadius / 2);
+    group.add(...cells.map(c => c.mesh));
+
+    return group;
+    // return mesh;
 }
 
 // Hexagon
@@ -88,25 +106,26 @@ function Hexagon(cX, cZ, index, w) {
     this.position = new Vector3(
         (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
         // Math.floor(Math.random() * 10) - 3,
-        heightMap[index],
+        // heightMap[index],
+        simplex.noise2D(cX, cZ) * 4,
         cZ * (outerRadius * 1.5)
     );
 
-    const rnd = () => randomRange(-0.6, 0.6);
+    // const rnd = () => randomRange(-0.6, 0.6);
 
     this.corners = {
-		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(rnd()),
-        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius).addScalar(rnd()),
-		N: new Vector3(0, 0, -outerRadius).addScalar(rnd()),
-        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius).addScalar(rnd()),
-		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius).addScalar(rnd()),
-        S: new Vector3(0, 0, outerRadius).addScalar(rnd()),
+		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(0, 1)),
+        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius).addScalar(simplex.noise2D(1, 2)),
+		N: new Vector3(0, 0, -outerRadius).addScalar(simplex.noise2D(2, 3)),
+        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius).addScalar(simplex.noise2D(3, 4)),
+		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(4, 5)),
+        S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(5, 6)),
     };
     const geometry = new Geometry();
-    const color = new Color(this.position.y < heightMapRange[1] * 0.25 ? '#0000FF'
-        : this.position.y < heightMapRange[1] * 0.4 ? '#FFFF00'
-        : this.position.y < heightMapRange[1] * 0.6 ? '#00FF00'
-        : this.position.y < heightMapRange[1] * 0.8 ? '#654321'
+    const color = new Color(this.position.y < 0 ? '#0000FF'
+        : this.position.y < 0.4 ? '#FFFF00'
+        : this.position.y < 0.6 ? '#00FF00'
+        : this.position.y < 0.8 ? '#654321'
         : '#FFF'
     );
     geometry.colors.push(color);
@@ -179,11 +198,9 @@ function Hexagon(cX, cZ, index, w) {
         faceI += 3;
     }
 
-    // console.log(geometry);
-    
-    geometry.mergeVertices();   // Remove duplicate vertices introduced in triangulation loop
+    geometry.mergeVertices();
     geometry.computeFaceNormals();
-    // geometry.computeVertexNormals();
+    geometry.computeVertexNormals();
     // geometry.normalsNeedUpdate = true;
     geometry.name = 'Hexagon';
 
@@ -209,9 +226,9 @@ function Hexagon(cX, cZ, index, w) {
     // sprite.scale.x = 0.125;
     // this.mesh.add(sprite);
     
-    // createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
-    // const wireframe = createWireframe(geometry);
-    // this.mesh.add(wireframe);
+    createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
+    const wireframe = createWireframe(geometry);
+    this.mesh.add(wireframe);
 
 	return this;
 }
@@ -258,24 +275,24 @@ function createLabel({ x: cX, z: cZ }, y) {
     });
 }
 
-function generateHeight(width, height) {
-    let size = width * height,
-        data = new Uint8Array(size),
-        perlin = new ImprovedNoise(),
-        quality = 1,
-        z = Math.random() * 10;
+// function generateHeight(width, height) {
+//     let size = width * height,
+//         data = new Uint8Array(size),
+//         perlin = new ImprovedNoise(),
+//         quality = 1,
+//         z = Math.random() * 10;
 
-    for (let j = 0; j < 4; j ++) {
-        for (let i = 0; i < size; i ++) {
+//     for (let j = 0; j < 4; j ++) {
+//         for (let i = 0; i < size; i ++) {
 
-            let x = i % width, y = ~ ~ ( i / width );
-            data[i] += Math.abs(perlin.noise(x / quality, y / quality, z) * quality * 1.75);
-        }
+//             let x = i % width, y = ~ ~ ( i / width );
+//             data[i] += Math.abs(perlin.noise(x / quality, y / quality, z) * quality * 1.75);
+//         }
 
-        quality += 3;
-    }
+//         quality += 3;
+//     }
 
-    return data;
-}
+//     return data;
+// }
 
 export default HexGrid;

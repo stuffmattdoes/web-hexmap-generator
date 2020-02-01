@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "simplex-noise": "^2.4.0",
     "three": "^0.112.1"
   }
 }
