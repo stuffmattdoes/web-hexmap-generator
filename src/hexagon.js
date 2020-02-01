@@ -1,4 +1,5 @@
 import {
+    BufferGeometry,
     Color,
     Face3,
     FontLoader,
@@ -12,7 +13,7 @@ import {
     ShapeBufferGeometry,
     VertexColors,
     Vector3,
-    WireframeGeometry,
+    WireframeGeometry
 } from 'three';
 // import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
@@ -52,10 +53,11 @@ function HexGrid(width, height) {
         }
     }
 
-    // geometry.mergeVertices();
-    // geometry.computeFaceNormals()
-    // geometry.computeFlatVertexNormals();
-    // geometry.computeVertexNormals();
+    geometry.mergeVertices();
+    geometry.computeFaceNormals()
+    // geometry.computeFlatVertexNormals(); // results look same as above
+
+    geometry.computeVertexNormals();
     // geometry.verticesNeedUpdate = true;
 
     const material = new MeshStandardMaterial({
@@ -73,9 +75,8 @@ function HexGrid(width, height) {
     group.position.z = -(height * innerRadius) + (innerRadius / 2);
     group.add(...cells.map(c => c.mesh));
 
-    console.log('labels', labels);
-    return group;
-    // return mesh;
+    // return group;
+    return mesh;
 }
 
 // Hexagon
@@ -208,8 +209,8 @@ function Hexagon(cX, cZ, index, w) {
     }
 
     // geometry.mergeVertices();
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
+    // geometry.computeFaceNormals();
+    // geometry.computeVertexNormals();
     // geometry.normalsNeedUpdate = true;
     // geometry.verticesNeedUpdate = true;
     geometry.name = 'Hexagon';
