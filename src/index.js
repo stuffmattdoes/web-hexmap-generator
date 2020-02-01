@@ -108,8 +108,8 @@ function createScene() {
 }
 
 function createutilities() {
-	const grid = new GridHelper(100, 20, '#FF9933', '#fff');
-	scene.add(grid);
+	// const grid = new GridHelper(100, 20, '#FF9933', '#fff');
+	// scene.add(grid);
 
 	// var gui = new GUI();
 	// gui.add({ 'GUI Parameter': false }, 'GUI Parameter');
@@ -118,7 +118,6 @@ function createutilities() {
 function createObjects() {
 	hexGrid = new HexGrid(24, 24);
 	scene.add(hexGrid);
-	console.log(scene);
 }
 
 function createStats() {

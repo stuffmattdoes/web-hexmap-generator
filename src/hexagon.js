@@ -14,14 +14,15 @@ import {
     Vector3,
     WireframeGeometry,
 } from 'three';
-import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
+// import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
-import { randomRange } from './util';
+// import { randomRange } from './util';
 import SimplexNoise from 'simplex-noise';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
     solidArea = 0.75,
+    labels = [],
     simplex,
     // lut = new Lut(),
     // blendArea = 1 - solidArea,
@@ -30,9 +31,9 @@ let outerRadius = 5,
     // heightMapRange = [];
 
 function HexGrid(width, height) {
-    const grid = new Geometry();
+    const geometry = new Geometry();
     const group = new Group();
-    grid.name = 'HexGrid';
+    geometry.name = 'HexGrid';
     // heightMap = generateHeight(width, height);
     // heightMapRange = [
     //     heightMap.slice().sort()[0],
@@ -44,27 +45,35 @@ function HexGrid(width, height) {
     for (let z = 0, i = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const hexCell = new Hexagon(x, z, i, width);
-            // grid.mergeMesh(hexCell.mesh);
-            // grid.mergeVertices();
+            geometry.mergeMesh(hexCell.mesh);
+            // geometry.mergeVertices();
             cells.push(hexCell);
             i++;
         }
     }
 
-    grid.verticesNeedUpdate = true;
+    // geometry.mergeVertices();
+    // geometry.computeFaceNormals()
+    // geometry.computeFlatVertexNormals();
+    // geometry.computeVertexNormals();
+    // geometry.verticesNeedUpdate = true;
 
     const material = new MeshStandardMaterial({
         vertexColors: VertexColors
     });
-    const mesh = new Mesh(grid, material);
+    const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
     mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
+
+    const wireframe = createWireframe(geometry);
+    mesh.add(wireframe);
 
     group.position.x = -(width * innerRadius) + (innerRadius / 2);
     group.position.z = -(height * innerRadius) + (innerRadius / 2);
     group.add(...cells.map(c => c.mesh));
 
+    console.log('labels', labels);
     return group;
     // return mesh;
 }
@@ -114,12 +123,12 @@ function Hexagon(cX, cZ, index, w) {
     // const rnd = () => randomRange(-0.6, 0.6);
 
     this.corners = {
-		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(0, 1)),
-        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius).addScalar(simplex.noise2D(1, 2)),
-		N: new Vector3(0, 0, -outerRadius).addScalar(simplex.noise2D(2, 3)),
-        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius).addScalar(simplex.noise2D(3, 4)),
-		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(4, 5)),
-        S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(5, 6)),
+		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(cX, cZ)),
+        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius).addScalar(simplex.noise2D(cX + 1, cZ + 1)),
+		N: new Vector3(0, 0, -outerRadius).addScalar(simplex.noise2D(cX + 2, cZ + 2)),
+        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius).addScalar(simplex.noise2D(cX + 3, cZ + 3)),
+		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(cX + 4, cX + 4)),
+        S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(cX + 5, cX + 5)),
     };
     const geometry = new Geometry();
     const color = new Color(this.position.y < 0 ? '#0000FF'
@@ -198,10 +207,11 @@ function Hexagon(cX, cZ, index, w) {
         faceI += 3;
     }
 
-    geometry.mergeVertices();
+    // geometry.mergeVertices();
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
     // geometry.normalsNeedUpdate = true;
+    // geometry.verticesNeedUpdate = true;
     geometry.name = 'Hexagon';
 
     // const displacementMap = new TextureLoader().load('img/tiling-perlin-normal.png');
@@ -227,8 +237,8 @@ function Hexagon(cX, cZ, index, w) {
     // this.mesh.add(sprite);
     
     createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
-    const wireframe = createWireframe(geometry);
-    this.mesh.add(wireframe);
+    // const wireframe = createWireframe(geometry);
+    // this.mesh.add(wireframe);
 
 	return this;
 }
@@ -263,6 +273,7 @@ function createLabel({ x: cX, z: cZ }, y) {
                 geometry.computeBoundingBox();
                 const xMid = - 0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
                 const text = new Mesh(geometry, material);
+                text.name = 'Text';
                 text.rotateX(-90 * ThreeMath.DEG2RAD);
                 text.position.x = xMid;
                 text.position.y = y + 0.1;
