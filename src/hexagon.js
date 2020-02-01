@@ -16,6 +16,7 @@ import {
 } from 'three';
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
+import { randomRange } from './util';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
@@ -90,17 +91,20 @@ function Hexagon(cX, cZ, index, w) {
         heightMap[index],
         cZ * (outerRadius * 1.5)
     );
-    const corners = {
-		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius),
-        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius),
-		N: new Vector3(0, 0, -outerRadius),
-        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius),
-		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius),
-        S: new Vector3(0, 0, outerRadius),
+
+    const rnd = () => randomRange(-0.6, 0.6);
+
+    this.corners = {
+		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(rnd()),
+        NW: new Vector3(-innerRadius, 0, -0.5 * outerRadius).addScalar(rnd()),
+		N: new Vector3(0, 0, -outerRadius).addScalar(rnd()),
+        NE: new Vector3(innerRadius, 0, -0.5 * outerRadius).addScalar(rnd()),
+		SE: new Vector3(innerRadius, 0, 0.5 * outerRadius).addScalar(rnd()),
+        S: new Vector3(0, 0, outerRadius).addScalar(rnd()),
     };
     const geometry = new Geometry();
     const color = new Color(this.position.y < heightMapRange[1] * 0.25 ? '#0000FF'
-        : this.position.y < heightMapRange[1] * 0.5 ? '#FFFF00'
+        : this.position.y < heightMapRange[1] * 0.4 ? '#FFFF00'
         : this.position.y < heightMapRange[1] * 0.6 ? '#00FF00'
         : this.position.y < heightMapRange[1] * 0.8 ? '#654321'
         : '#FFF'
@@ -109,12 +113,12 @@ function Hexagon(cX, cZ, index, w) {
     // const colors = [ new Color('#FF0000'), new Color('#00F00F'), new Color('#0000FF') ];
 
     // Trianglation loop
-    const cornersKeys = Object.keys(corners);
+    const cornersKeys = Object.keys(this.corners);
 
     for (let i = 0, faceI = 0; i < cornersKeys.length; i++) {
-        const { x, z } = corners[cornersKeys[i]];
+        const { x, z } = this.corners[cornersKeys[i]];
         const { y } = this.position;
-        const { x: x2, z: z2 } = corners[cornersKeys[i + 1]] || corners.SW;
+        const { x: x2, z: z2 } = this.corners[cornersKeys[i + 1]] || this.corners[cornersKeys[0]];
 
         // main
         geometry.vertices.push(new Vector3(0, this.position.y, 0));
@@ -124,7 +128,7 @@ function Hexagon(cX, cZ, index, w) {
 
         // We only need the first three bridges to prevent overlapping
         if (i < 3) {
-            let cornerKeys = Object.keys(corners),
+            let cornerKeys = Object.keys(this.corners),
                 dir = Object.keys(neighbors),
                 neighbor = neighbors[dir[i]],
                 nextNeighbor = neighbors[dir[i + 1]];
@@ -134,22 +138,33 @@ function Hexagon(cX, cZ, index, w) {
                     nextCorner = cornerKeys[i + 4] || cornerKeys[i - 2];
                 let { mesh: { geometry: { colors: neighborColors }}, position } = neighbor;
                 const diff = new Vector3().subVectors(position, this.position);
+                const b1 = new Vector3(
+                    diff.x + neighbor.corners[corner].x * solidArea,
+                    position.y,
+                    diff.z + neighbor.corners[corner].z * solidArea
+                );
+                const b2 = new Vector3(
+                    diff.x + neighbor.corners[nextCorner].x * solidArea,
+                    position.y,
+                    diff.z + neighbor.corners[nextCorner].z * solidArea
+                );
+                const b1Colors = [ color, color, neighborColors[0] ];
+                const b2Colors = [ color, neighborColors[0], neighborColors[0] ];
 
-                const b = new Vector3(diff.x + corners[corner].x * solidArea, position.y, diff.z + corners[corner].z * solidArea);
-                const b2 = new Vector3(diff.x + corners[nextCorner].x * solidArea, position.y, diff.z + corners[nextCorner].z * solidArea);
-                const bColors = [ color, color, neighborColors[0] ];
-                const b1Colors = [ color, neighborColors[0], neighborColors[0] ];
-
-                geometry.vertices.push(b);
+                geometry.vertices.push(b1);
                 geometry.vertices.push(b2);
-                geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 3, null, bColors));
-                geometry.faces.push(new Face3(faceI + 1, faceI + 3, faceI + 4, null, b1Colors));
+                geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 3, null, b1Colors));
+                geometry.faces.push(new Face3(faceI + 1, faceI + 3, faceI + 4, null, b2Colors));
 
                 if (nextNeighbor && i < 2) {
                     let { mesh: { geometry: { colors: nextNeighborColors }}, position } = nextNeighbor;
                     const triCorner = cornerKeys[i + 5] || cornerKeys[i - 1];
                     const nextDiff = new Vector3().subVectors(position, this.position);
-                    const tri = new Vector3(nextDiff.x + corners[triCorner].x * solidArea, position.y, nextDiff.z + corners[triCorner].z * solidArea);
+                    const tri = new Vector3(
+                        nextDiff.x + nextNeighbor.corners[triCorner].x * solidArea, 
+                        position.y, 
+                        nextDiff.z + nextNeighbor.corners[triCorner].z * solidArea
+                    );
                     const triColors = [ color, nextNeighborColors[0], neighborColors[0] ];
                     geometry.vertices.push(tri);
                     geometry.faces.push(new Face3(faceI + 2, faceI + 5, faceI + 3, null, triColors));
@@ -194,9 +209,9 @@ function Hexagon(cX, cZ, index, w) {
     // sprite.scale.x = 0.125;
     // this.mesh.add(sprite);
     
-    createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
-    const wireframe = createWireframe(geometry);
-    this.mesh.add(wireframe);
+    // createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
+    // const wireframe = createWireframe(geometry);
+    // this.mesh.add(wireframe);
 
 	return this;
 }
