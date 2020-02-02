@@ -17,8 +17,8 @@ import {
 } from 'three';
 // import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
-// import { randomRange } from './util';
-import SimplexNoise from 'simplex-noise';
+// import SimplexNoise from 'simplex-noise';
+import { Simplex } from './util';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
@@ -28,20 +28,12 @@ let outerRadius = 5,
     // lut = new Lut(),
     // blendArea = 1 - solidArea,
     cells = [];
-    // heightMap = [],
-    // heightMapRange = [];
 
 function HexGrid(width, height) {
     const geometry = new Geometry();
     const group = new Group();
     geometry.name = 'HexGrid';
-    // heightMap = generateHeight(width, height);
-    // heightMapRange = [
-    //     heightMap.slice().sort()[0],
-    //     heightMap.slice().sort()[heightMap.length -1]
-    // ];
-
-    simplex = new SimplexNoise('seed');
+    simplex = new Simplex('seed');
 
     for (let z = 0, i = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
@@ -52,6 +44,8 @@ function HexGrid(width, height) {
             i++;
         }
     }
+
+    console.log(cells.map(c => c.position.y).sort());
 
     geometry.mergeVertices();
     geometry.computeFaceNormals()
@@ -115,13 +109,12 @@ function Hexagon(cX, cZ, index, w) {
 
     this.position = new Vector3(
         (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        // Math.floor(Math.random() * 10) - 3,
-        // heightMap[index],
-        simplex.noise2D(cX, cZ) * 4,
+        simplex.octaves(cX, cZ, 6, 0.1),
         cZ * (outerRadius * 1.5)
     );
-
-    // const rnd = () => randomRange(-0.6, 0.6);
+    const minHeight = -3,
+        maxHeight = 7,
+        range = maxHeight - minHeight;
 
     this.corners = {
 		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(cX, cZ)),
@@ -132,10 +125,10 @@ function Hexagon(cX, cZ, index, w) {
         S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(cX + 5, cX + 5)),
     };
     const geometry = new Geometry();
-    const color = new Color(this.position.y < 0 ? '#0000FF'
-        : this.position.y < 0.4 ? '#FFFF00'
-        : this.position.y < 0.6 ? '#00FF00'
-        : this.position.y < 0.8 ? '#654321'
+    const color = new Color(this.position.y < 0.2 * range + minHeight ? '#0000FF'
+        : this.position.y < 0.4 * range + minHeight ? '#FFFF00'
+        : this.position.y < 0.6 * range + minHeight ? '#00FF00'
+        : this.position.y < 0.8 * range + minHeight ? '#654321'
         : '#FFF'
     );
     geometry.colors.push(color);
@@ -286,25 +279,5 @@ function createLabel({ x: cX, z: cZ }, y) {
             reject
     });
 }
-
-// function generateHeight(width, height) {
-//     let size = width * height,
-//         data = new Uint8Array(size),
-//         perlin = new ImprovedNoise(),
-//         quality = 1,
-//         z = Math.random() * 10;
-
-//     for (let j = 0; j < 4; j ++) {
-//         for (let i = 0; i < size; i ++) {
-
-//             let x = i % width, y = ~ ~ ( i / width );
-//             data[i] += Math.abs(perlin.noise(x / quality, y / quality, z) * quality * 1.75);
-//         }
-
-//         quality += 3;
-//     }
-
-//     return data;
-// }
 
 export default HexGrid;

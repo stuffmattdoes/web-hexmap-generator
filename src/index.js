@@ -85,8 +85,8 @@ function createScene() {
 	const nearPlane = 1;
 	const farPlane = 10000;
 	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-	// camera.position.set(0, 60, 40);	 // far
-	camera.position.set(0, 20, 12);	// close
+	camera.position.set(0, 60, 40);	 // far
+	// camera.position.set(0, 20, 12);	// close
 	// camera.rotation.set(10, 10, 10);
 
 	// Interaction
