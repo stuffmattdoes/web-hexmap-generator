@@ -69,7 +69,7 @@ function createControls() {
 }
 
 function createLighting() {
-	const ambientLight = new AmbientLight('#ca80ff', 0.25);
+	const ambientLight = new AmbientLight('#ca80ff', 0.5);
 	scene.add(ambientLight);
 
 	hemisphereLight = new HemisphereLight(colors.sky, colors.ground, 0.2);
@@ -81,7 +81,7 @@ function createLighting() {
 	const hemiLightHelper = new HemisphereLightHelper(hemisphereLight, 10);
 	scene.add(hemiLightHelper);
 
-	const dirLight = new DirectionalLight(0xffffff, 0.6);;
+	const dirLight = new DirectionalLight(0xffffff, 0.65);;
 	dirLight.position.set(-1, 1.75, 1);
 	dirLight.position.multiplyScalar(30);
 	scene.add(dirLight);
