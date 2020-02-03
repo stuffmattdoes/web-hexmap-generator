@@ -9,6 +9,7 @@ import {
     Math as ThreeMath,
     Mesh,
     MeshBasicMaterial,
+    MeshToonMaterial,
     MeshStandardMaterial,
     ShapeBufferGeometry,
     VertexColors,
@@ -45,8 +46,6 @@ function HexGrid(width, height) {
         }
     }
 
-    // console.log(cells.map(c => c.position.y).sort());
-
     geometry.mergeVertices();
     geometry.computeFaceNormals()
     // geometry.computeFlatVertexNormals(); // results look same as above
@@ -55,7 +54,14 @@ function HexGrid(width, height) {
     // geometry.verticesNeedUpdate = true;
 
     const material = new MeshStandardMaterial({
+    // const material = new MeshToonMaterial({
         vertexColors: VertexColors
+        // map: imgTexture,
+        // bumpMap: imgTexture,
+        // bumpScale: bumpScale,
+        // color: diffuseColor,
+        // specular: specularColor,
+        // shininess: specularShininess,
     });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
@@ -201,24 +207,7 @@ function Hexagon(cX, cZ, index, w) {
         faceI += 3;
     }
 
-    // geometry.mergeVertices();
-    // geometry.computeFaceNormals();
-    // geometry.computeVertexNormals();
-    // geometry.normalsNeedUpdate = true;
-    // geometry.verticesNeedUpdate = true;
-    geometry.name = 'Hexagon';
-
-    // const displacementMap = new TextureLoader().load('img/tiling-perlin-normal.png');
-
-    const material = new MeshStandardMaterial({
-        // displacementMap: displacementMap,
-		// displacementScale: 1.25,
-		// displacementBias: - 0.428408, // from original model
-        // vertexColors: FaceColors
-        vertexColors: VertexColors
-    });
-
-    this.mesh = new Mesh(geometry, material);
+    this.mesh = new Mesh(geometry, new MeshStandardMaterial());
     this.mesh.name = 'Hexagon';
     this.mesh.position.x = this.position.x;
     // hexagon.position.y = Math.floor(Math.random() * 10);
@@ -230,9 +219,7 @@ function Hexagon(cX, cZ, index, w) {
     // sprite.scale.x = 0.125;
     // this.mesh.add(sprite);
     
-    createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
-    // const wireframe = createWireframe(geometry);
-    // this.mesh.add(wireframe);
+    // createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
 
 	return this;
 }
