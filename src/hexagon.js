@@ -45,13 +45,13 @@ function HexGrid(width, height) {
         }
     }
 
-    console.log(cells.map(c => c.position.y).sort());
+    // console.log(cells.map(c => c.position.y).sort());
 
     geometry.mergeVertices();
     geometry.computeFaceNormals()
     // geometry.computeFlatVertexNormals(); // results look same as above
 
-    geometry.computeVertexNormals();
+    // geometry.computeVertexNormals();
     // geometry.verticesNeedUpdate = true;
 
     const material = new MeshStandardMaterial({
@@ -62,8 +62,8 @@ function HexGrid(width, height) {
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
     mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
 
-    const wireframe = createWireframe(geometry);
-    mesh.add(wireframe);
+    // const wireframe = createWireframe(geometry);
+    // mesh.add(wireframe);
 
     group.position.x = -(width * innerRadius) + (innerRadius / 2);
     group.position.z = -(height * innerRadius) + (innerRadius / 2);

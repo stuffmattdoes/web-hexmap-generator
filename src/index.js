@@ -1,22 +1,35 @@
 import {
 	AmbientLight,
+	BackSide,
 	Color,
 	DirectionalLight,
+	DirectionalLightHelper,
+	FogExp2,
 	Fog,
-	GridHelper,
+	// GridHelper,
 	HemisphereLight,
+	HemisphereLightHelper,
+	Mesh,
+	MeshBasicMaterial,
+	MeshLambertMaterial,
 	PerspectiveCamera,
+	PlaneBufferGeometry,
 	Raycaster,
 	Scene,
+	ShaderMaterial,
+	SphereBufferGeometry,
 	WebGLRenderer,
-	Vector2
+	Vector2,
+	// Vector3
 } from 'three';
+// import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
+// import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
-// import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
+// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import { WEBGL } from 'three/examples/jsm/webGL';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 // Game Objects
@@ -24,10 +37,18 @@ import HexGrid from './hexagon';
 
 let HEIGHT,
 	WIDTH,
+	// ascii,
 	camera,
+	colors = {
+		ground: new Color('hsl(35, 100%, 75%)'),
+		// horizon: new Color('#e6f0ff'),
+		horizon: new Color('hsl(214, 100%, 95%)'),
+		sky: new Color('hsl(214, 100%, 60%)')
+	},
 	controls,
+	hemisphereLight,
 	mouse,
-	postprocessing = {},
+	// postprocessing = {},
 	raycaster,
 	renderer,
 	scene,
@@ -48,25 +69,143 @@ function createControls() {
 }
 
 function createLighting() {
-	const ambientLight = new AmbientLight('#222');
-	const sky = '#aaa';
-	const ground = '#000';
-	const hemisphereLight = new HemisphereLight(sky, ground, .6);
-	const directionalLight = new DirectionalLight('#fff', .6);
-	directionalLight.position.set(150, 350, 350);
-	directionalLight.castShadow = true;
-	directionalLight.shadow.camera.left = -400;		// Directional shadows visible area constraints
-	directionalLight.shadow.camera.right = 400;
-	directionalLight.shadow.camera.top = 400;
-	directionalLight.shadow.camera.bottom = -400;
-	directionalLight.shadow.camera.near = 1;
-	directionalLight.shadow.camera.far = 1000;
-	directionalLight.shadow.mapSize.width = 2048;	// Shadow resolution
-	directionalLight.shadow.mapSize.height = 2048;
-
-	scene.add(hemisphereLight);
-	scene.add(directionalLight);
+	const ambientLight = new AmbientLight('#ca80ff', 0.25);
 	scene.add(ambientLight);
+
+	hemisphereLight = new HemisphereLight(colors.sky, colors.ground, 0.2);
+	// hemisphereLight.color.setHSL(0.6, 1, 0.6);
+	// hemisphereLight.groundColor.setHSL(0.1, 1, 0.75);
+	hemisphereLight.position.set(0, 25, 0);
+	scene.add(hemisphereLight);
+
+	const hemiLightHelper = new HemisphereLightHelper(hemisphereLight, 10);
+	scene.add(hemiLightHelper);
+
+	const dirLight = new DirectionalLight(0xffffff, 0.6);;
+	dirLight.position.set(-1, 1.75, 1);
+	dirLight.position.multiplyScalar(30);
+	scene.add(dirLight);
+
+	dirLight.castShadow = true;
+	dirLight.shadow.mapSize.width = 2048;
+	dirLight.shadow.mapSize.height = 2048;
+
+	const d = 50;
+	dirLight.shadow.camera.left = -d;
+	dirLight.shadow.camera.right = d;
+	dirLight.shadow.camera.top = d;
+	dirLight.shadow.camera.bottom = -d;
+
+	dirLight.shadow.camera.far = 3500;
+	dirLight.shadow.bias = - 0.0001;
+
+	const dirLightHeper = new DirectionalLightHelper(dirLight, 10);
+	scene.add(dirLightHeper);
+}
+
+function createSkyShader() {
+	// Add Sky
+	const sky = new Sky();
+	sky.scale.setScalar( 450000 );
+	scene.add( sky );
+
+	// Add Sun Helper
+	const sunSphere = new Mesh(
+		new SphereBufferGeometry( 20000, 16, 8 ),
+		new MeshBasicMaterial( { color: 0xffffff } )
+	);
+	sunSphere.position.y = - 700000;
+	sunSphere.visible = false;
+	scene.add( sunSphere );
+
+	/// GUI
+	var effectController = {
+		turbidity: 10,
+		rayleigh: 2,
+		mieCoefficient: 0.005,
+		mieDirectionalG: 0.8,
+		luminance: 1,
+		inclination: 0.49, // elevation / inclination
+		azimuth: 0.25, // Facing front,
+		sun: ! true
+	};
+
+	var distance = 400000;
+
+	function guiChanged() {
+		var uniforms = sky.material.uniforms;
+		uniforms[ 'turbidity' ].value = effectController.turbidity;
+		uniforms[ 'rayleigh' ].value = effectController.rayleigh;
+		uniforms[ 'mieCoefficient' ].value = effectController.mieCoefficient;
+		uniforms[ 'mieDirectionalG' ].value = effectController.mieDirectionalG;
+		uniforms[ 'luminance' ].value = effectController.luminance;
+
+		var theta = Math.PI * ( effectController.inclination - 0.5 );
+		var phi = 2 * Math.PI * ( effectController.azimuth - 0.5 );
+
+		sunSphere.position.x = distance * Math.cos( phi );
+		sunSphere.position.y = distance * Math.sin( phi ) * Math.sin( theta );
+		sunSphere.position.z = distance * Math.sin( phi ) * Math.cos( theta );
+		sunSphere.visible = effectController.sun;
+
+		uniforms[ 'sunPosition' ].value.copy( sunSphere.position );
+
+		renderer.render( scene, camera );
+
+	}
+
+	var gui = new GUI();
+
+	gui.add( effectController, 'turbidity', 1.0, 20.0, 0.1 ).onChange( guiChanged );
+	gui.add( effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged );
+	gui.add( effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged );
+	gui.add( effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged );
+	gui.add( effectController, 'luminance', 0.0, 2 ).onChange( guiChanged );
+	gui.add( effectController, 'inclination', 0, 1, 0.0001 ).onChange( guiChanged );
+	gui.add( effectController, 'azimuth', 0, 1, 0.0001 ).onChange( guiChanged );
+	gui.add( effectController, 'sun' ).onChange( guiChanged );
+
+	guiChanged();
+}
+
+function createEnvironment() {
+	// Sky
+	const vertexShader = document.getElementById('vertexShader').textContent;
+	const fragmentShader = document.getElementById('fragmentShader').textContent;
+	let uniforms = {
+		'topColor': { value: colors.sky },
+		'bottomColor': { value: colors.horizon },
+		'offset': { value: 33 },
+		'exponent': { value: 0.6 }
+	};
+
+	// uniforms['topColor'].value.copy(hemisphereLight.color);
+
+	const skyGeo = new SphereBufferGeometry(1000, 32, 15);
+	const skyMat = new ShaderMaterial({
+		uniforms: uniforms,
+		vertexShader: vertexShader,
+		fragmentShader: fragmentShader,
+		side: BackSide
+	});
+
+	const sky = new Mesh(skyGeo, skyMat);
+	scene.add(sky);
+
+	// Fog
+	scene.fog = new Fog(colors.horizon, 60, 200);
+	// scene.fog.color.copy(uniforms['bottomColor'].value);
+
+	// Ground
+	const groundGeo = new PlaneBufferGeometry(10000, 10000);
+	const groundMat = new MeshLambertMaterial({ color: colors.ground });
+	// groundMat.color.setHSL(0.095, 1, 0.75);
+
+	const ground = new Mesh(groundGeo, groundMat);
+	ground.position.y = -20;
+	ground.rotation.x = -Math.PI / 2;
+	ground.receiveShadow = true;
+	// scene.add(ground);
 }
 
 function createScene() {
@@ -76,8 +215,6 @@ function createScene() {
 	// Scene
 	scene = new Scene();
 	scene.background = new Color('#ccc');
-	// scene.fog = new FogExp2('#ccc', 0.002);
-	scene.fog = new Fog('#ccc', 100, 950);
 
 	// Camera
 	const aspectRatio = WIDTH / HEIGHT;
@@ -85,8 +222,8 @@ function createScene() {
 	const nearPlane = 1;
 	const farPlane = 10000;
 	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-	camera.position.set(0, 60, 40);	 // far
-	// camera.position.set(0, 20, 12);	// close
+	camera.position.set(0, 20, 45);	// far
+	// camera.position.set(0, 10, 100);	 // close
 	// camera.rotation.set(10, 10, 10);
 
 	// Interaction
@@ -116,7 +253,7 @@ function createutilities() {
 }
 
 function createObjects() {
-	hexGrid = new HexGrid(24, 24);
+	hexGrid = new HexGrid(64, 64);
 	scene.add(hexGrid);
 }
 
@@ -126,10 +263,13 @@ function createStats() {
 }
 
 function onWindowResize() {
-	camera.aspect = window.innerWidth / window.innerHeight;
+	HEIGHT = window.innerHeight;
+	WIDTH = window.innerWidth;
+	camera.aspect = WIDTH / HEIGHT;
 	camera.updateProjectionMatrix();
-	renderer.setSize(window.innerWidth, window.innerHeight);
-	postprocessing.composer.setSize(window.innerWidth, window.innerHeight);
+	renderer.setSize(WIDTH, HEIGHT);
+	// postprocessing.composer.setSize(window.innerWidth, window.innerHeight);
+	ascii.setSize(WIDTH, HEIGHT);
 }
 
 function update() {
@@ -150,6 +290,7 @@ function update() {
 	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
 	renderer.render(scene, camera);
 	// postprocessing.composer.render(0.1);
+	// ascii.render(scene, camera);
 	stats.update();
 	requestAnimationFrame(update);
 }
@@ -166,32 +307,43 @@ function onMouseMove({ clientX, clientY }) {
 }
 
 function postProcessing() {
-	const renderPass = new RenderPass(scene, camera);
-	const bokehPass = new BokehPass(scene, camera, {
-		focus: .1,
-		aperture: 1.5,
-		maxblur: .05,
-		width: WIDTH,
-		height: HEIGHT
-	} );
+	// const renderPass = new RenderPass(scene, camera);
+	// const bokehPass = new BokehPass(scene, camera, {
+	// 	focus: .1,
+	// 	aperture: 1.5,
+	// 	maxblur: .05,
+	// 	width: WIDTH,
+	// 	height: HEIGHT
+	// } );
 
-	const composer = new EffectComposer(renderer);
+	// const composer = new EffectComposer(renderer);
 
-	composer.addPass(renderPass);
-	composer.addPass(bokehPass);
+	// composer.addPass(renderPass);
+	// composer.addPass(bokehPass);
 
-	postprocessing.composer = composer;
-	postprocessing.bokeh = bokehPass;
+	// postprocessing.composer = composer;
+	// postprocessing.bokeh = bokehPass;
+
+	ascii = new AsciiEffect(renderer, ' .:-+*=%@#',{ invert: true });
+	ascii.setSize(WIDTH, HEIGHT);
+	ascii.domElement.style.color = 'white';
+	ascii.domElement.style.backgroundColor = 'black';
+
+	// Special case: append effect.domElement, instead of renderer.domElement.
+	// AsciiEffect creates a custom domElement (a div container) where the ASCII elements are placed.
+
+	document.body.appendChild(ascii.domElement);
 }
 
 function initialize() {
 	createScene();
-	createControls();
 	createLighting();
+	createEnvironment();
 	createutilities();
 	createObjects();
 	createStats();
 	// postProcessing();
+	createControls();
 	update();
 }
 
