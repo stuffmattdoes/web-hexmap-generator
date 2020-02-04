@@ -13,7 +13,7 @@ import {
 import { createWireframe } from './util';
 
 function Water() {
-    const geometry = new PlaneBufferGeometry(200, 200);
+    const geometry = new PlaneBufferGeometry(1000, 1000);
     geometry.name = 'Water';
 
     const vert = document.getElementById('water-vert').textContent;
@@ -34,7 +34,7 @@ function Water() {
     
     const material = new MeshPhongMaterial({
         color: '#0000ff',
-        opacity: 0.7,
+        opacity: 0.6,
         transparent: true,
     });
 

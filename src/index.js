@@ -37,16 +37,34 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import HexGrid from './hexagon';
 import Water from './water';
 
+export const colors = {
+	ground: new Color('hsl(35, 100%, 75%)'),
+	// horizon: new Color('#e6f0ff'),
+	horizon: new Color('hsl(214, 100%, 95%)'),
+	sky: new Color('hsl(214, 100%, 60%)'),
+	earth: {
+		a: new Color('#493829'),
+		b: new Color('#816c5b'),
+		c: new Color('#a9a18c'),
+		d: new Color('#613318'),
+		e: new Color('#855723'),
+		f: new Color('#b99c6b'),
+		g: new Color('#8f3b1b'),
+		h: new Color('#d57500'),
+		i: new Color('#dbca60'),
+		j: new Color('#404f24'),
+		k: new Color('#668d3c'),
+		l: new Color('#bdd09f'),
+		m: new Color('#4e6172'),
+		n: new Color('#83929f'),
+		o: new Color('#a3adb8')
+	}
+};
+
 let HEIGHT,
 	WIDTH,
 	// ascii,
 	camera,
-	colors = {
-		ground: new Color('hsl(35, 100%, 75%)'),
-		// horizon: new Color('#e6f0ff'),
-		horizon: new Color('hsl(214, 100%, 95%)'),
-		sky: new Color('hsl(214, 100%, 60%)')
-	},
 	controls,
 	hemisphereLight,
 	mouse,

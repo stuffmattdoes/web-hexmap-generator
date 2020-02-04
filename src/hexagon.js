@@ -18,6 +18,7 @@ import {
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
 // import SimplexNoise from 'simplex-noise';
 import { createWireframe, Simplex } from './util';
+import { colors } from '.';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
@@ -113,7 +114,7 @@ function Hexagon(cX, cZ, index, w) {
 
     this.position = new Vector3(
         (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        simplex.octaves(cX, cZ, 6, 0.1),
+        simplex.octaves(cX, cZ, 6, 0.08),
         cZ * (outerRadius * 1.5)
     );
     const minHeight = -3,
@@ -129,11 +130,13 @@ function Hexagon(cX, cZ, index, w) {
         S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(cX + 5, cX + 5)),
     };
     const geometry = new Geometry();
-    const color = new Color(this.position.y < 0.2 * range + minHeight ? '#EDC9AF'
-        : this.position.y < 0.4 * range + minHeight ? '#FFFF00'
-        : this.position.y < 0.6 * range + minHeight ? '#00FF00'
-        : this.position.y < 0.8 * range + minHeight ? '#654321'
-        : '#FFF'
+    const color = new Color(
+        this.position.y < 0 * range + minHeight ? colors.earth.b
+        : this.position.y < 0.15 * range + minHeight ? colors.earth.f
+        : this.position.y < 0.3 * range + minHeight ? colors.earth.i
+        : this.position.y < 0.45 * range + minHeight ? colors.earth.k
+        : this.position.y < 0.75 * range + minHeight ? colors.earth.j
+        : '#fff'
     );
     geometry.colors.push(color);
     // const colors = [ new Color('#FF0000'), new Color('#00F00F'), new Color('#0000FF') ];
