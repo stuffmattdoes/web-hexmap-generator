@@ -1,25 +1,23 @@
 import {
-    BufferGeometry,
+    // BufferGeometry,
     Color,
     Face3,
     FontLoader,
     Geometry,
     Group,
-    LineSegments,
     Math as ThreeMath,
     Mesh,
     MeshBasicMaterial,
-    MeshToonMaterial,
+    // MeshToonMaterial,
     MeshStandardMaterial,
     ShapeBufferGeometry,
     VertexColors,
-    Vector3,
-    WireframeGeometry
+    Vector3
 } from 'three';
 // import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
 // import SimplexNoise from 'simplex-noise';
-import { Simplex } from './util';
+import { createWireframe, Simplex } from './util';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
@@ -131,7 +129,7 @@ function Hexagon(cX, cZ, index, w) {
         S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(cX + 5, cX + 5)),
     };
     const geometry = new Geometry();
-    const color = new Color(this.position.y < 0.2 * range + minHeight ? '#0000FF'
+    const color = new Color(this.position.y < 0.2 * range + minHeight ? '#EDC9AF'
         : this.position.y < 0.4 * range + minHeight ? '#FFFF00'
         : this.position.y < 0.6 * range + minHeight ? '#00FF00'
         : this.position.y < 0.8 * range + minHeight ? '#654321'
@@ -166,6 +164,7 @@ function Hexagon(cX, cZ, index, w) {
                     nextCorner = cornerKeys[i + 4] || cornerKeys[i - 2];
                 let { mesh: { geometry: { colors: neighborColors }}, position } = neighbor;
                 const diff = new Vector3().subVectors(position, this.position);
+                // const diff2 = new Vector3().subVectors(position, this.position).divideScalar(2);
                 const b1 = new Vector3(
                     diff.x + neighbor.corners[corner].x * solidArea,
                     position.y,
@@ -176,6 +175,8 @@ function Hexagon(cX, cZ, index, w) {
                     position.y,
                     diff.z + neighbor.corners[nextCorner].z * solidArea
                 );
+                // const b3 = new Vector3().addVectors(neighbor.corners[corner], this.corners[corner]).divideScalar(2);
+                // const b4 = new Vector3().addVectors(neighbor.corners[nextCorner], this.corners[nextCorner]).divideScalar(2);
                 const b1Colors = [ color, color, neighborColors[0] ];
                 const b2Colors = [ color, neighborColors[0], neighborColors[0] ];
 
@@ -222,17 +223,6 @@ function Hexagon(cX, cZ, index, w) {
     // createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
 
 	return this;
-}
-
-function createWireframe(geometry) {
-    const wireframe = new WireframeGeometry(geometry);
-    const line = new LineSegments(wireframe);
-    
-    line.material.depthTest = false;
-    line.material.opacity = 0.25;
-    line.material.transparent = true;
-
-    return line
 }
 
 function createLabel({ x: cX, z: cZ }, y) {

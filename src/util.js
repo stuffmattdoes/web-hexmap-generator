@@ -1,4 +1,20 @@
+import {
+    LineSegments,
+    WireframeGeometry
+} from 'three';
+
 import SimplexNoise from 'simplex-noise';
+
+export const createWireframe = (geometry) => {
+    const wireframe = new WireframeGeometry(geometry);
+    const line = new LineSegments(wireframe);
+    
+    line.material.depthTest = false;
+    line.material.opacity = 0.25;
+    line.material.transparent = true;
+
+    return line
+}
 
 export const randomRange = (min, max) => Math.random() * (max - min);
 

@@ -4,7 +4,7 @@ import {
 	Color,
 	DirectionalLight,
 	DirectionalLightHelper,
-	FogExp2,
+	// FogExp2,
 	Fog,
 	// GridHelper,
 	HemisphereLight,
@@ -23,17 +23,19 @@ import {
 	// Vector3
 } from 'three';
 // import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
-// import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
-// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
-// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import { WEBGL } from 'three/examples/jsm/webGL';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+// import { Water } from 'three/examples/jsm/objects/Water2.js';
 
 // Game Objects
 import HexGrid from './hexagon';
+import Water from './water';
 
 let HEIGHT,
 	WIDTH,
@@ -48,7 +50,7 @@ let HEIGHT,
 	controls,
 	hemisphereLight,
 	mouse,
-	// postprocessing = {},
+	postprocessing = {},
 	raycaster,
 	renderer,
 	scene,
@@ -56,7 +58,8 @@ let HEIGHT,
 
 let hexGrid,
 	intersects,
-	intersected;
+	intersected,
+	water;
 
 function createControls() {
 	controls = new MapControls(camera, renderer.domElement);
@@ -107,16 +110,16 @@ function createSkyShader() {
 	// Add Sky
 	const sky = new Sky();
 	sky.scale.setScalar( 450000 );
-	scene.add( sky );
+	scene.add(sky);
 
 	// Add Sun Helper
 	const sunSphere = new Mesh(
-		new SphereBufferGeometry( 20000, 16, 8 ),
-		new MeshBasicMaterial( { color: 0xffffff } )
+		new SphereBufferGeometry(20000, 16, 8),
+		new MeshBasicMaterial({ color: 0xffffff })
 	);
 	sunSphere.position.y = - 700000;
 	sunSphere.visible = false;
-	scene.add( sunSphere );
+	scene.add(sunSphere);
 
 	/// GUI
 	var effectController = {
@@ -127,51 +130,50 @@ function createSkyShader() {
 		luminance: 1,
 		inclination: 0.49, // elevation / inclination
 		azimuth: 0.25, // Facing front,
-		sun: ! true
+		sun: !true
 	};
 
 	var distance = 400000;
 
 	function guiChanged() {
 		var uniforms = sky.material.uniforms;
-		uniforms[ 'turbidity' ].value = effectController.turbidity;
-		uniforms[ 'rayleigh' ].value = effectController.rayleigh;
-		uniforms[ 'mieCoefficient' ].value = effectController.mieCoefficient;
-		uniforms[ 'mieDirectionalG' ].value = effectController.mieDirectionalG;
-		uniforms[ 'luminance' ].value = effectController.luminance;
+		uniforms['turbidity'].value = effectController.turbidity;
+		uniforms['rayleigh'].value = effectController.rayleigh;
+		uniforms['mieCoefficient'].value = effectController.mieCoefficient;
+		uniforms['mieDirectionalG'].value = effectController.mieDirectionalG;
+		uniforms['luminance'].value = effectController.luminance;
 
-		var theta = Math.PI * ( effectController.inclination - 0.5 );
-		var phi = 2 * Math.PI * ( effectController.azimuth - 0.5 );
+		var theta = Math.PI * (effectController.inclination - 0.5);
+		var phi = 2 * Math.PI * (effectController.azimuth - 0.5);
 
-		sunSphere.position.x = distance * Math.cos( phi );
-		sunSphere.position.y = distance * Math.sin( phi ) * Math.sin( theta );
-		sunSphere.position.z = distance * Math.sin( phi ) * Math.cos( theta );
+		sunSphere.position.x = distance * Math.cos(phi);
+		sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
+		sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
 		sunSphere.visible = effectController.sun;
 
-		uniforms[ 'sunPosition' ].value.copy( sunSphere.position );
+		uniforms['sunPosition'].value.copy(sunSphere.position);
 
-		renderer.render( scene, camera );
-
+		renderer.render(scene, camera);
 	}
 
-	var gui = new GUI();
+	const gui = new GUI();
 
-	gui.add( effectController, 'turbidity', 1.0, 20.0, 0.1 ).onChange( guiChanged );
-	gui.add( effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged );
-	gui.add( effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged );
-	gui.add( effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged );
-	gui.add( effectController, 'luminance', 0.0, 2 ).onChange( guiChanged );
-	gui.add( effectController, 'inclination', 0, 1, 0.0001 ).onChange( guiChanged );
-	gui.add( effectController, 'azimuth', 0, 1, 0.0001 ).onChange( guiChanged );
-	gui.add( effectController, 'sun' ).onChange( guiChanged );
+	gui.add(effectController, 'turbidity', 1.0, 20.0, 0.1).onChange(guiChanged);
+	gui.add(effectController, 'rayleigh', 0.0, 4, 0.001).onChange(guiChanged);
+	gui.add(effectController, 'mieCoefficient', 0.0, 0.1, 0.001).onChange(guiChanged);
+	gui.add(effectController, 'mieDirectionalG', 0.0, 1, 0.001).onChange(guiChanged);
+	gui.add(effectController, 'luminance', 0.0, 2).onChange(guiChanged);
+	gui.add(effectController, 'inclination', 0, 1, 0.0001).onChange(guiChanged);
+	gui.add(effectController, 'azimuth', 0, 1, 0.0001).onChange(guiChanged);
+	gui.add(effectController, 'sun').onChange(guiChanged);
 
 	guiChanged();
 }
 
 function createEnvironment() {
 	// Sky
-	const vertexShader = document.getElementById('vertexShader').textContent;
-	const fragmentShader = document.getElementById('fragmentShader').textContent;
+	const vert = document.getElementById('sky-vert').textContent;
+	const frag = document.getElementById('sky-frag').textContent;
 	let uniforms = {
 		'topColor': { value: colors.sky },
 		'bottomColor': { value: colors.horizon },
@@ -184,8 +186,8 @@ function createEnvironment() {
 	const skyGeo = new SphereBufferGeometry(1000, 32, 15);
 	const skyMat = new ShaderMaterial({
 		uniforms: uniforms,
-		vertexShader: vertexShader,
-		fragmentShader: fragmentShader,
+		vertexShader: vert,
+		fragmentShader: frag,
 		side: BackSide
 	});
 
@@ -252,9 +254,23 @@ function createutilities() {
 	// gui.add({ 'GUI Parameter': false }, 'GUI Parameter');
 }
 
-function createObjects() {
+function populateScene() {
 	hexGrid = new HexGrid(64, 64);
-	scene.add(hexGrid);
+	water = new Water();
+	// const waterGeometry = new PlaneBufferGeometry(200, 200);
+
+	// water = new Water(waterGeometry, {
+	// 	color: '#61aad2',
+	// 	scale: 0.2,
+	// 	flowDirection: new Vector2(1, 1),
+	// 	textureWidth: 1024,
+	// 	textureHeight: 1024
+	// });
+
+	// water.position.y = -1;
+	// water.rotation.x = Math.PI * - 0.5;
+
+	scene.add(hexGrid, water);
 }
 
 function createStats() {
@@ -273,19 +289,19 @@ function onWindowResize() {
 }
 
 function update() {
-	raycaster.setFromCamera(mouse, camera);
-	intersects = raycaster.intersectObjects(hexGrid.children);
+	// raycaster.setFromCamera(mouse, camera);
+	// intersects = raycaster.intersectObjects(hexGrid.children);
 
-	if (intersects.length > 0 ) {
-		if (intersected != intersects[0]) {
-			intersected = intersects[0];
-			// intersected.originalMaterial = intersected.object.material;
-			// intersected.object.material.color = new Color('#fff');
-		}
-	} else {
-		// if (intersected) intersected.object.material = new Material(intersected.originalMaterial);
-		intersected = null;
-	}
+	// if (intersects.length > 0 ) {
+	// 	if (intersected != intersects[0]) {
+	// 		intersected = intersects[0];
+	// 		// intersected.originalMaterial = intersected.object.material;
+	// 		// intersected.object.material.color = new Color('#fff');
+	// 	}
+	// } else {
+	// 	// if (intersected) intersected.object.material = new Material(intersected.originalMaterial);
+	// 	intersected = null;
+	// }
 
 	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
 	renderer.render(scene, camera);
@@ -307,32 +323,53 @@ function onMouseMove({ clientX, clientY }) {
 }
 
 function postProcessing() {
-	// const renderPass = new RenderPass(scene, camera);
-	// const bokehPass = new BokehPass(scene, camera, {
-	// 	focus: .1,
-	// 	aperture: 1.5,
-	// 	maxblur: .05,
-	// 	width: WIDTH,
-	// 	height: HEIGHT
-	// } );
+	let renderPass = new RenderPass(scene, camera);
+	let bokehPass = new BokehPass(scene, camera, {
+		focus: 10,
+		aperture: 0.000005,
+		maxblur: 0.025,
+		width: WIDTH,
+		height: HEIGHT
+	});
 
-	// const composer = new EffectComposer(renderer);
+	let composer = new EffectComposer(renderer);
 
-	// composer.addPass(renderPass);
-	// composer.addPass(bokehPass);
+	composer.addPass(renderPass);
+	composer.addPass(bokehPass);
 
-	// postprocessing.composer = composer;
-	// postprocessing.bokeh = bokehPass;
+	postprocessing.composer = composer;
+	postprocessing.bokeh = bokehPass;
 
-	ascii = new AsciiEffect(renderer, ' .:-+*=%@#',{ invert: true });
-	ascii.setSize(WIDTH, HEIGHT);
-	ascii.domElement.style.color = 'white';
-	ascii.domElement.style.backgroundColor = 'black';
+	// GUI
+	// let effectController = {
+	// 	focus: 500.0,
+	// 	aperture: 5,
+	// 	maxblur: 1.0
+	// };
+
+	// let matChanger = () => {
+	// 	postprocessing.bokeh.uniforms['focus'].value = effectController.focus;
+	// 	postprocessing.bokeh.uniforms['aperture'].value = effectController.aperture * 0.00001;
+	// 	postprocessing.bokeh.uniforms['maxblur'].value = effectController.maxblur;
+	// };
+
+	// let gui = new GUI();
+	// gui.add(effectController, 'focus', 10.0, 3000.0, 10 ).onChange(matChanger);
+	// gui.add(effectController, 'aperture', 0, 10, 0.1 ).onChange(matChanger);
+	// gui.add(effectController, 'maxblur', 0.0, 3.0, 0.025 ).onChange(matChanger);
+	// gui.close();
+
+	// matChanger();
+
+	// ascii = new AsciiEffect(renderer, ' .:-+*=%@#',{ invert: true });
+	// ascii.setSize(WIDTH, HEIGHT);
+	// ascii.domElement.style.color = 'white';
+	// ascii.domElement.style.backgroundColor = 'black';
 
 	// Special case: append effect.domElement, instead of renderer.domElement.
 	// AsciiEffect creates a custom domElement (a div container) where the ASCII elements are placed.
 
-	document.body.appendChild(ascii.domElement);
+	// document.body.appendChild(ascii.domElement);
 }
 
 function initialize() {
@@ -340,7 +377,7 @@ function initialize() {
 	createLighting();
 	createEnvironment();
 	createutilities();
-	createObjects();
+	populateScene();
 	createStats();
 	// postProcessing();
 	createControls();
