@@ -8,9 +8,11 @@ import {
     Math as ThreeMath,
     Mesh,
     MeshBasicMaterial,
-    // MeshToonMaterial,
+    MeshPhongMaterial,
     MeshStandardMaterial,
+    MeshToonMaterial,
     ShapeBufferGeometry,
+    TextureLoader,
     VertexColors,
     Vector3
 } from 'three';
@@ -49,18 +51,22 @@ function HexGrid(width, height) {
     geometry.computeFaceNormals()
     // geometry.computeFlatVertexNormals(); // results look same as above
 
-    // geometry.computeVertexNormals();
+    geometry.computeVertexNormals();
     // geometry.verticesNeedUpdate = true;
 
-    const material = new MeshStandardMaterial({
+    const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
+
+    const material = new MeshPhongMaterial({
     // const material = new MeshToonMaterial({
-        vertexColors: VertexColors
-        // map: imgTexture,
-        // bumpMap: imgTexture,
-        // bumpScale: bumpScale,
-        // color: diffuseColor,
-        // specular: specularColor,
-        // shininess: specularShininess,
+        vertexColors: VertexColors,
+        // map: bumpMap,
+        bumpMap,
+        bumpScale: 1,
+
+        // color: 0x353535,
+        // specular: 0x222222,
+        // shininess: 25,
+        // bumpScale: 1
     });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
@@ -211,7 +217,7 @@ function Hexagon(cX, cZ, index, w) {
         faceI += 3;
     }
 
-    this.mesh = new Mesh(geometry, new MeshStandardMaterial());
+    this.mesh = new Mesh(geometry, new MeshPhongMaterial());
     this.mesh.name = 'Hexagon';
     this.mesh.position.x = this.position.x;
     // hexagon.position.y = Math.floor(Math.random() * 10);

@@ -35,6 +35,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 // Game Objects
 import HexGrid from './hexagon';
+import { skyVertex, skyFrag } from'./sky.shader';
 import Water from './water';
 
 export const colors = {
@@ -77,6 +78,7 @@ let HEIGHT,
 let hexGrid,
 	intersects,
 	intersected,
+	childUpdates = [],
 	water;
 
 function createControls() {
@@ -190,11 +192,11 @@ function createSkyShader() {
 
 function createEnvironment() {
 	// Sky
-	const vert = document.getElementById('sky-vert').textContent;
-	const frag = document.getElementById('sky-frag').textContent;
+	// const vert = document.getElementById('sky-vert').textContent;
+	// const frag = document.getElementById('sky-frag').textContent;
 	let uniforms = {
 		'topColor': { value: colors.sky },
-		'bottomColor': { value: colors.horizon },
+		'bottomColor': { value: new Color('#fff') },
 		'offset': { value: 33 },
 		'exponent': { value: 0.6 }
 	};
@@ -204,8 +206,8 @@ function createEnvironment() {
 	const skyGeo = new SphereBufferGeometry(1000, 32, 15);
 	const skyMat = new ShaderMaterial({
 		uniforms: uniforms,
-		vertexShader: vert,
-		fragmentShader: frag,
+		vertexShader: skyVertex,
+		fragmentShader: skyFrag,
 		side: BackSide
 	});
 
@@ -275,6 +277,8 @@ function createutilities() {
 function populateScene() {
 	hexGrid = new HexGrid(64, 64);
 	water = new Water();
+
+	// childUpdates.push(water);
 	// const waterGeometry = new PlaneBufferGeometry(200, 200);
 
 	// water = new Water(waterGeometry, {
@@ -303,7 +307,7 @@ function onWindowResize() {
 	camera.updateProjectionMatrix();
 	renderer.setSize(WIDTH, HEIGHT);
 	// postprocessing.composer.setSize(window.innerWidth, window.innerHeight);
-	ascii.setSize(WIDTH, HEIGHT);
+	// ascii.setSize(WIDTH, HEIGHT);
 }
 
 function update() {
