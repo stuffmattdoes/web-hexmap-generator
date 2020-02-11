@@ -47,38 +47,41 @@ export const vertShader = `
     void main() { 
         // vUv = textureMatrix * vec4( position, 1.0 );
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
 `;
 
 export const fragShader = `
+    // #include <packing>
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
+    uniform float cameraNear;
+    uniform float cameraFar;
+
     varying vec2 vUv;
     uniform vec3 waterColor;
-    uniform vec3 fogColor;
-    uniform float fogNear;
-    uniform float fogFar;
-    uniform sampler2D normalMap1;
-    // uniform sampler2D normalMap2;
+    // uniform vec3 fogColor;
+    // uniform float fogNear;
+    // uniform float fogFar;
+    // uniform sampler2D normalMap1;
 
     void main() {
-        float scale = 1.0;
-		vec4 normalColor = texture2D(normalMap1, (vUv * scale));
-        normalColor = normalize(normalColor * 2.0 - 1.0);
+        // gl_FragColor = vec4(waterColor, 0.5);
+        vec4 sceneDepth = texture2D(tDepth, vUv);
+        gl_FragColor = vec4(waterColor * sceneDepth.z, 0.5);
 
-        // calculate normal vector
-		// vec3 normal = normalize(vec3(normalColor.r * 2.0 - 1.0, normalColor.b,  normalColor.g * 2.0 - 1.0));
+        // Depth
+        // float near = 1.0;
+        // float far = 10.0;
+        // float z = gl_FragCoord.z;  // depth value [0,1]
+        // float ndcZ = 2.0 * z - 1.0;  // [-1,1]
+        // float linearDepth = (2.0 * near * far) / (far + near - ndcZ * (far - near));
+        // gl_FragColor = vec4(vec3(linearDepth)/far, 1.0);
+        // this division is for better visualization
 
-        gl_FragColor = vec4(waterColor, 1.0);
-        // gl_FragColor = mix(waterColor, normalColor.rgb, 0.5);
-
-        // #ifdef USE_FOG   // Applies to "fog: true" in shader 
-            // #ifdef USE_LOGDEPTHBUF_EXT
-                // float depth = gl_FragDepthEXT / gl_FragCoord.w;
-            // #else
-        float depth = gl_FragCoord.z / gl_FragCoord.w;
-        // #endif
-        float fogFactor = smoothstep(fogNear, fogFar, depth);
-        gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
-        // #endif
+        // Fog
+        // float fogDepth = gl_FragCoord.z / gl_FragCoord.w;
+        // float fogFactor = smoothstep(fogNear, fogFar, fogDepth);
+        // gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
     }
 `;

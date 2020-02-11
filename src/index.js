@@ -2,6 +2,7 @@ import {
 	AmbientLight,
 	BackSide,
 	Color,
+	DepthTexture,
 	DirectionalLight,
 	DirectionalLightHelper,
 	// FogExp2,
@@ -12,15 +13,19 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	MeshLambertMaterial,
+	NearestFilter,
 	PerspectiveCamera,
 	PlaneBufferGeometry,
 	Raycaster,
+	RGBFormat,
 	Scene,
 	ShaderMaterial,
 	SphereBufferGeometry,
+	UnsignedShortType,
 	WebGLRenderer,
 	Vector2,
-	// Vector3
+	// Vector3,
+	WebGLRenderTarget
 } from 'three';
 // import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
@@ -62,11 +67,12 @@ export const colors = {
 	}
 };
 
-let HEIGHT,
-	WIDTH,
+let HEIGHT = window.innerHeight,
+	WIDTH = window.innerWidth,
 	// ascii,
 	camera,
 	controls,
+	depthTarget,
 	hemisphereLight,
 	mouse,
 	postprocessing = {},
@@ -231,9 +237,6 @@ function createEnvironment() {
 }
 
 function createScene() {
-	HEIGHT = window.innerHeight;
-	WIDTH = window.innerWidth;
-
 	// Scene
 	scene = new Scene();
 	scene.background = new Color('#ccc');
@@ -267,37 +270,16 @@ function createScene() {
 }
 
 function createutilities() {
-	// const grid = new GridHelper(100, 20, '#FF9933', '#fff');
-	// scene.add(grid);
+	const grid = new GridHelper(100, 20, '#FF9933', '#fff');
+	scene.add(grid);
 
-	// var gui = new GUI();
-	// gui.add({ 'GUI Parameter': false }, 'GUI Parameter');
+	var gui = new GUI();
+	gui.add({ 'GUI Parameter': false }, 'GUI Parameter');
 }
 
 function populateScene() {
 	hexGrid = new HexGrid(64, 64);
 	water = new Water();
-
-	// const waterGeometry = new PlaneBufferGeometry(100, 100);
-
-	// const params = {
-	// 	color: '#ffffff',
-	// 	scale: 4,
-	// 	flowX: 1,
-	// 	flowY: 1
-	// };
-
-	// const water = new Water(waterGeometry, {
-	// 	color: params.color,
-	// 	scale: params.scale,
-	// 	flowDirection: new Vector2(params.flowX, params.flowY),
-	// 	textureWidth: 1024,
-	// 	textureHeight: 1024
-	// });
-
-	// water.position.y = -1;
-	// water.rotation.x = Math.PI * - 0.5;
-
 	scene.add(hexGrid, water);
 }
 
@@ -312,6 +294,7 @@ function onWindowResize() {
 	camera.aspect = WIDTH / HEIGHT;
 	camera.updateProjectionMatrix();
 	renderer.setSize(WIDTH, HEIGHT);
+	depthTarget.setSize(WIDTH, HEIGHT);
 	// postprocessing.composer.setSize(window.innerWidth, window.innerHeight);
 	// ascii.setSize(WIDTH, HEIGHT);
 }
@@ -331,8 +314,16 @@ function update() {
 	// 	intersected = null;
 	// }
 
-	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
+	// Depth buffer
+	renderer.setRenderTarget(depthTarget);
 	renderer.render(scene, camera);
+	
+	// Regular render
+	renderer.setRenderTarget(null);
+	renderer.render(scene, camera);
+	
+	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
+	
 	// postprocessing.composer.render(0.1);
 	// ascii.render(scene, camera);
 	stats.update();
@@ -400,11 +391,25 @@ function postProcessing() {
 	// document.body.appendChild(ascii.domElement);
 }
 
+function depthBuffer() {
+	// Create a multi render target with Float buffers
+	depthTarget = new WebGLRenderTarget(WIDTH, HEIGHT);
+	depthTarget.texture.format = RGBFormat;
+	depthTarget.texture.minFilter = NearestFilter;
+	depthTarget.texture.magFilter = NearestFilter;
+	depthTarget.texture.generateMipmaps = false;
+	depthTarget.stencilBuffer = false;
+	depthTarget.depthBuffer = true;
+	depthTarget.depthTexture = new DepthTexture();
+	depthTarget.depthTexture.type = UnsignedShortType;
+}
+
 function initialize() {
+	depthBuffer();
 	createScene();
 	createLighting();
 	createEnvironment();
-	createutilities();
+	// createutilities();
 	populateScene();
 	createStats();
 	// postProcessing();
@@ -420,5 +425,7 @@ if (WEBGL.isWebGLAvailable()) {
 }
 
 export {
+	camera,
+	depthTarget,
 	scene
 };
