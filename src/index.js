@@ -35,8 +35,8 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 // Game Objects
 import HexGrid from './hexagon';
-import { skyVertex, skyFrag } from'./sky.shader';
 import Water from './water';
+import { skyVertex, skyFrag } from'./sky.shader';
 
 export const colors = {
 	ground: new Color('hsl(35, 100%, 75%)'),
@@ -215,7 +215,7 @@ function createEnvironment() {
 	scene.add(sky);
 
 	// Fog
-	scene.fog = new Fog(colors.horizon, 60, 200);
+	scene.fog = new Fog(colors.horizon, 100, 200);
 	// scene.fog.color.copy(uniforms['bottomColor'].value);
 
 	// Ground
@@ -278,13 +278,19 @@ function populateScene() {
 	hexGrid = new HexGrid(64, 64);
 	water = new Water();
 
-	// childUpdates.push(water);
-	// const waterGeometry = new PlaneBufferGeometry(200, 200);
+	// const waterGeometry = new PlaneBufferGeometry(100, 100);
 
-	// water = new Water(waterGeometry, {
-	// 	color: '#61aad2',
-	// 	scale: 0.2,
-	// 	flowDirection: new Vector2(1, 1),
+	// const params = {
+	// 	color: '#ffffff',
+	// 	scale: 4,
+	// 	flowX: 1,
+	// 	flowY: 1
+	// };
+
+	// const water = new Water(waterGeometry, {
+	// 	color: params.color,
+	// 	scale: params.scale,
+	// 	flowDirection: new Vector2(params.flowX, params.flowY),
 	// 	textureWidth: 1024,
 	// 	textureHeight: 1024
 	// });

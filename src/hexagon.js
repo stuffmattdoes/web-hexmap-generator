@@ -54,19 +54,17 @@ function HexGrid(width, height) {
     geometry.computeVertexNormals();
     // geometry.verticesNeedUpdate = true;
 
-    const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
+    // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
 
     const material = new MeshPhongMaterial({
-    // const material = new MeshToonMaterial({
         vertexColors: VertexColors,
         // map: bumpMap,
-        bumpMap,
-        bumpScale: 1,
+        // bumpMap,
+        // bumpScale: 1,
 
         // color: 0x353535,
         // specular: 0x222222,
-        // shininess: 25,
-        // bumpScale: 1
+        shininess: 0,
     });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';

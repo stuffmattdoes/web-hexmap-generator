@@ -40,24 +40,45 @@ export const vertShader = `
         by Three.js) to get a final
         vertex position
     */
-    // varying vec2 vUv;
+    // uniform mat4 textureMatrix;
+    // varying vec4 vUv;
+    varying vec2 vUv;
     
     void main() { 
-        // vUv = uv;
+        // vUv = textureMatrix * vec4( position, 1.0 );
+        vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
     }
 `;
 
 export const fragShader = `
-    // fragment shaders don't have a default precision so we need
-    // to pick one. mediump is a good default
-    precision mediump float;
-    // varying vec2 vUv;
+    varying vec2 vUv;
     uniform vec3 waterColor;
+    uniform vec3 fogColor;
+    uniform float fogNear;
+    uniform float fogFar;
+    uniform sampler2D normalMap1;
+    // uniform sampler2D normalMap2;
 
     void main() {
-        // gl_FragColor is a special variable a fragment shader
-        // is responsible for setting
-        gl_FragColor = vec4(waterColor, 0.5); // return reddish-purple
+        float scale = 1.0;
+		vec4 normalColor = texture2D(normalMap1, (vUv * scale));
+        normalColor = normalize(normalColor * 2.0 - 1.0);
+
+        // calculate normal vector
+		// vec3 normal = normalize(vec3(normalColor.r * 2.0 - 1.0, normalColor.b,  normalColor.g * 2.0 - 1.0));
+
+        gl_FragColor = vec4(waterColor, 1.0);
+        // gl_FragColor = mix(waterColor, normalColor.rgb, 0.5);
+
+        // #ifdef USE_FOG   // Applies to "fog: true" in shader 
+            // #ifdef USE_LOGDEPTHBUF_EXT
+                // float depth = gl_FragDepthEXT / gl_FragCoord.w;
+            // #else
+        float depth = gl_FragCoord.z / gl_FragCoord.w;
+        // #endif
+        float fogFactor = smoothstep(fogNear, fogFar, depth);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+        // #endif
     }
 `;

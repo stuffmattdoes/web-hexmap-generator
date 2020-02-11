@@ -1,3 +1,10 @@
+/*
+    TODO:
+    - Reflection
+    - Refraction
+    - Subsurface light scattering
+*/
+
 import {
     ImageUtils,
     Math as ThreeMath,
@@ -8,83 +15,64 @@ import {
     PlaneBufferGeometry,
     RepeatWrapping,
     ShaderMaterial,
-    Vector2
+    TextureLoader,
+    Vector2,
+    Vector3,
+    Vector4
 } from 'three';
 import { createWireframe } from './util';
+import { colors, scene } from '.';
+import { fragShader, vertShader } from './water.shader.js';
 
 function Water() {
-    const geometry = new PlaneBufferGeometry(1000, 1000);
+    const h = 200;
+    const w = 200;
+    const geometry = new PlaneBufferGeometry(w, h);
     geometry.name = 'Water';
 
-    const vert = document.getElementById('water-vert').textContent;
-	const frag = document.getElementById('water-frag').textContent;
+    const textureLoader = new TextureLoader();
+    // const noiseTex = textureLoader.load('/img/tiling-perlin-noise.png');
+    // noiseTex.wrapS = RepeatWrapping;
+    // noiseTex.wrapT = RepeatWrapping;
+    // noiseTex.repeat.set(w, h);
     
-    let uniforms = {
-        colorTop: '#0000ff',
-		colorDepth: '00ff00',
-		depthMaxDistance: 2
-	};
+    const normalMap1 = textureLoader.load('/img/water_normal_1.png');
+    normalMap1.wrapS = RepeatWrapping;
+    normalMap1.wrapT = RepeatWrapping;
 
-	// uniforms['topColor'].value.copy(hemisphereLight.color);
-	// const material = new ShaderMaterial({
-	// 	uniforms: uniforms,
-    //     fragmentShader: frag,
-    //     vertexShader: vert
-    // });
-    
-    const material = new MeshPhongMaterial({
-        color: '#0000ff',
-        opacity: 0.6,
-        transparent: true,
+    const { r, g, b } = colors.earth.m;
+    const uniforms = {
+        waterColor: { value: new Vector3(r, g, b) },
+        fogColor: { value: scene.fog.color },
+        fogFar: { value: scene.fog.far },
+        fogNear: { value: scene.fog.near },
+        // noiseTex: { value: noiseTex },
+        normalMap1: { value: normalMap1 }
+        // colorTop: '#0000ff',
+		// colorDepth: '#00ff00',
+		// depthMaxDistance: 2,
+        // time: { value: 1.0 },
+        // 'uvScale': { value: new Vector2(3.0, 1.0) },
+    };
+
+	const material = new ShaderMaterial({
+        uniforms: uniforms,
+        // fog: true,   // for USE_FOG conditional in shader
+        fragmentShader: fragShader,
+        // lighting: true,
+        vertexShader: vertShader,
+        transparent: true
     });
 
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Water';
     mesh.rotateX(-90 * ThreeMath.DEG2RAD);
     mesh.position.y = -1;
-    // mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
-    // mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
 
     const wireframe = createWireframe(geometry);
     mesh.add(wireframe);
 
     return mesh;
-
-    // var waterTexture = new ImageUtils.loadTexture('images/water.jpg');
-    // waterTexture.wrapS = waterTexture.wrapT = RepeatWrapping; 
-    
-    // const noiseTexture = new ImageUtils.loadTexture('img/cloud.png');
-	// noiseTexture.wrapS = noiseTexture.wrapT = RepeatWrapping; 
-	
-	// // use 'this.' to create global object
-	// this.customUniforms = {
-	// 	baseTexture: 	{ type: 't', value: waterTexture },
-	// 	baseSpeed: 		{ type: 'f', value: 0.05 },
-	// 	noiseTexture: 	{ type: 't', value: noiseTexture },
-	// 	noiseScale:		{ type: 'f', value: 0.5337 },
-	// 	alpha: 			{ type: 'f', value: 1.0 },
-	// 	time: 			{ type: 'f', value: 1.0 }
-	// };
-	
-	// // create custom material from the shader code above
-	// //   that is within specially labeled script tags
-	// const material = new ShaderMaterial({
-    //     uniforms: this.customUniforms,
-	// 	vertexShader: document.getElementById('water-vert').textContent,
-	// 	fragmentShader: document.getElementById('water-frag').textContent
-	// });
-
-	// // other material properties
-	// // customMaterial.side = THREE.DoubleSide;
-
-	// // apply the material to a surface
-	// const geometry = new PlaneGeometry(200, 200);
-    // const mesh = new Mesh(geometry, material);
-    // mesh.name = 'Water';
-    // mesh.rotateX(-90 * ThreeMath.DEG2RAD);
-    // mesh.position.y = -1;
-    
-	// return mesh;
 }
 
 export default Water;
