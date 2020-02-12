@@ -41,7 +41,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 // Game Objects
 import HexGrid from './hexagon';
 import Water from './water';
-import { skyVertex, skyFrag } from'./sky.shader';
+import { skyVertex, skyFrag } from './sky.glsl.js';
 
 export const colors = {
 	ground: new Color('hsl(35, 100%, 75%)'),
@@ -247,8 +247,8 @@ function createScene() {
 	const nearPlane = 1;
 	const farPlane = 10000;
 	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-	camera.position.set(0, 20, 45);	// far
-	// camera.position.set(0, 10, 100);	 // close
+	// camera.position.set(0, 20, 45);	// far
+	camera.position.set(0, 1, 6);	 // close
 	// camera.rotation.set(10, 10, 10);
 
 	// Interaction

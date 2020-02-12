@@ -33,42 +33,49 @@
         example wold be a vertex's normal that would be used for lighting calculations
 */
 export const vertShader = `
-    /*
-        Multiply each vertex by the
-        model-view matrix and the
-        projection matrix (both provided
-        by Three.js) to get a final
-        vertex position
-    */
-    // uniform mat4 textureMatrix;
-    // varying vec4 vUv;
     varying vec2 vUv;
     
     void main() { 
-        // vUv = textureMatrix * vec4( position, 1.0 );
         vUv = uv;
+        /*
+            Multiply each vertex by the
+            model-view matrix and the
+            projection matrix (both provided
+            by Three.js) to get a final
+            vertex position
+        */
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        // gl_Position = vec4(position, 1.0);  // screen space
     }
 `;
 
 export const fragShader = `
-    // #include <packing>
+    #include <packing>
+
+    varying vec2 vUv;
+
     uniform sampler2D tDiffuse;
     uniform sampler2D tDepth;
     uniform float cameraNear;
     uniform float cameraFar;
-
-    varying vec2 vUv;
+    uniform vec3 fogColor;
+    uniform float fogNear;
+    uniform float fogFar;
     uniform vec3 waterColor;
-    // uniform vec3 fogColor;
-    // uniform float fogNear;
-    // uniform float fogFar;
     // uniform sampler2D normalMap1;
 
+    float readDepth(sampler2D depthSampler, vec2 coord) {
+        float fragCoordZ = texture2D(depthSampler, coord).x;
+        // return fragCoordZ;
+        float viewZ = perspectiveDepthToViewZ(fragCoordZ, cameraNear, cameraFar);
+        // return viewZ;
+        return viewZToOrthographicDepth(viewZ, cameraNear, cameraFar);
+    }
+
     void main() {
-        // gl_FragColor = vec4(waterColor, 0.5);
-        vec4 sceneDepth = texture2D(tDepth, vUv);
-        gl_FragColor = vec4(waterColor * sceneDepth.z, 0.5);
+        gl_FragColor = vec4(waterColor, 1.0);
+        // vec4 sceneDepth = texture2D(tDepth, vUv);
+        // gl_FragColor = vec4(waterColor * sceneDepth.z, 0.5);
 
         // Depth
         // float near = 1.0;
@@ -76,8 +83,15 @@ export const fragShader = `
         // float z = gl_FragCoord.z;  // depth value [0,1]
         // float ndcZ = 2.0 * z - 1.0;  // [-1,1]
         // float linearDepth = (2.0 * near * far) / (far + near - ndcZ * (far - near));
-        // gl_FragColor = vec4(vec3(linearDepth)/far, 1.0);
+
+        // float depth = sceneDepth.z - linearDepth;
+        // gl_FragColor = vec4(vec3(linearDepth) / far, 1.0);
         // this division is for better visualization
+
+        // vec3 diffuse = texture2D( tDiffuse, vUv ).rgb;
+        float depth = readDepth(tDepth, vUv);
+        gl_FragColor.rgb = 1.0 - vec3(depth);
+        gl_FragColor.a = 1.0;
 
         // Fog
         // float fogDepth = gl_FragCoord.z / gl_FragCoord.w;
