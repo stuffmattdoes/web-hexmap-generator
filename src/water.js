@@ -30,13 +30,16 @@ import { camera, colors, depthTarget, scene } from '.';
 import { fragShader, vertShader } from './water.glsl.js';
 
 function Water() {
-    let h = 4,
-        w = 4,
-        geometry = new PlaneBufferGeometry(w, h);
-        // target,
-        // textureLoader = new TextureLoader();
+    let h = 100,
+        w = 100,
+        geometry = new PlaneBufferGeometry(w, h),
+        textureLoader = new TextureLoader();
     
     geometry.name = 'Water';
+
+    const surfaceTexture = textureLoader.load('/img/water_bw.png');
+    surfaceTexture.wrapS = RepeatWrapping;
+    surfaceTexture.wrapT = RepeatWrapping;
 
     // const noiseTex = textureLoader.load('/img/tiling-perlin-noise.png');
     // noiseTex.wrapS = RepeatWrapping;
@@ -49,16 +52,19 @@ function Water() {
 
     const { r, g, b } = colors.earth.m;
     const uniforms = {
-        cameraNear: { value: camera.near },
-        // cameraFar: { value: camera.far },
-        cameraFar: { value: 10.0 },
-        tDiffuse: { value: depthTarget.texture },
-        tDepth: { value: depthTarget.depthTexture },
+        uSurfaceTexture: { value: surfaceTexture },
 
-        waterColor: { value: new Vector3(r, g, b) },
-        fogColor: { value: scene.fog.color },
-        fogFar: { value: scene.fog.far },
-        fogNear: { value: scene.fog.near },
+        uCameraNear: { value: camera.near },
+        // cameraFar: { value: camera.far },
+        uCameraFar: { value: 1000.0 },
+        uDiffuseMap: { value: depthTarget.texture },
+        uDepthMap: { value: depthTarget.depthTexture },
+        // uDepthMap2: { value: depthTarget2.depthTexture },
+
+        uWaterColor: { value: new Vector3(r, g, b) },
+        uFogColor: { value: scene.fog.color },
+        uFogFar: { value: scene.fog.far },
+        uFogNear: { value: scene.fog.near },
         // noiseTex: { value: noiseTex },
         // normalMap1: { value: normalMap1 }
         // colorTop: '#0000ff',
@@ -69,12 +75,13 @@ function Water() {
     };
 
 	const material = new ShaderMaterial({
-        uniforms: uniforms,
+        // depthTest: false,
         // fog: true,   // for USE_FOG conditional in shader
         fragmentShader: fragShader,
         // lighting: true,
-        vertexShader: vertShader,
-        transparent: true
+        transparent: true,
+        uniforms: uniforms,
+        vertexShader: vertShader
     });
 
     material.extensions = {
@@ -86,9 +93,13 @@ function Water() {
 
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Water';
-    // mesh.rotateX(-90 * ThreeMath.DEG2RAD);
-    // mesh.position.y = -1;
+    mesh.rotateX(-90 * ThreeMath.DEG2RAD);
+    mesh.position.y = -1;
     // mesh.position.z = -4;
+    // mesh.position.x = 1;
+
+    // mesh.rotateX(-30 * ThreeMath.DEG2RAD);
+    // mesh.position.y = 2;
 
     const wireframe = createWireframe(geometry);
     mesh.add(wireframe);

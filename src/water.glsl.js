@@ -1,5 +1,6 @@
 /*
-    https://threejs.org/docs/#api/en/materials/ShaderMaterial
+
+    Tutorial: https://code.tutsplus.com/series/creating-toon-water-for-the-web--cms-1263?_ga=2.49532515.436311687.1581566262-604567708.1579538549
 
     SHADERS
 
@@ -33,65 +34,94 @@
         example wold be a vertex's normal that would be used for lighting calculations
 */
 export const vertShader = `
+    /*  
+    Provided by Three.js:
+    uniform vec3 cameraPosition;    // camera position in world space
+    uniform mat4 modelMatrix;       // world space data of shader object (position, scale, rotation)
+    uniform mat4 modelViewMatrix;   // camera.matrixWorldInverse * object.matrixWorld
+    uniform mat3 normalMatrix;      // inverse transpose of modelViewMatrix
+    uniform mat4 projectionMatrix;  // camera.projectionMatrix
+    uniform mat4 viewMatrix;        // camera.matrixWorldInverse
+
+    Provided by Geometry & BufferGeometry:
+    attribute vec3 normal;      // Direction of normal for light calculations
+    attribute vec3 position;    // Position of this vertex (world-space)
+    attribute vec2 uv;          // Coordinates for texture mapping (normalized from 0 to 1)
+    */
+
     varying vec2 vUv;
-    
-    void main() { 
+    varying vec4 vClipSpace;
+    varying vec3 vPos;
+    varying vec3 vNormal;
+
+    void main() {
+        vNormal = normal;
+        vPos = position;
         vUv = uv;
         /*
-            Multiply each vertex by the
-            model-view matrix and the
-            projection matrix (both provided
-            by Three.js) to get a final
-            vertex position
+            Multiply each vertex by the model-view matrix and the
+            projection matrix to convert to clip-space
         */
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        // gl_Position = vec4(position, 1.0);  // screen space
+        // gl_ClipDistance[0] = 1;  // gl_ClipDisance undefined in Three.js ?
+        vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
+        gl_Position = vClipSpace;
+        // vClipSpace = position * 2.0 - 1.0;  // screen space
     }
 `;
 
 export const fragShader = `
     #include <packing>
 
+    // From vert
     varying vec2 vUv;
+    varying vec4 vClipSpace;
+    varying vec3 vPos;
 
-    uniform sampler2D tDiffuse;
-    uniform sampler2D tDepth;
-    uniform float cameraNear;
-    uniform float cameraFar;
-    uniform vec3 fogColor;
-    uniform float fogNear;
-    uniform float fogFar;
-    uniform vec3 waterColor;
-    // uniform sampler2D normalMap1;
+    // Characteristics
+    uniform sampler2D uSurfaceTexture;
+    uniform vec3 uWaterColor;
+    
+    // Depth
+    uniform sampler2D uDiffuseMap;
+    uniform sampler2D uDepthMap;
+    // uniform sampler2D uDepthMap2;
 
-    float readDepth(sampler2D depthSampler, vec2 coord) {
+    uniform float uCameraNear;
+    uniform float uCameraFar;
+    uniform vec4 uScreenSize;
+
+    // Fog
+    // uniform vec3 fogColor;
+    // uniform float fogNear;
+    // uniform float fogFar;
+
+    float readDepth (sampler2D depthSampler, vec2 coord) {
         float fragCoordZ = texture2D(depthSampler, coord).x;
-        // return fragCoordZ;
-        float viewZ = perspectiveDepthToViewZ(fragCoordZ, cameraNear, cameraFar);
-        // return viewZ;
-        return viewZToOrthographicDepth(viewZ, cameraNear, cameraFar);
+        float viewZ = perspectiveDepthToViewZ(fragCoordZ, uCameraNear, uCameraFar);
+        return viewZToOrthographicDepth(viewZ, uCameraNear, uCameraFar);
+    }
+
+    float getLinearDepth(vec3 pos) {
+        return -(viewMatrix * vec4(pos, 1.0)).z;
+    }
+
+    float getLinearScreenDepth(sampler2D map) {
+        vec2 uv = gl_FragCoord.xy * uScreenSize.zw;
+        return readDepth(map, uv);
     }
 
     void main() {
-        gl_FragColor = vec4(waterColor, 1.0);
-        // vec4 sceneDepth = texture2D(tDepth, vUv);
-        // gl_FragColor = vec4(waterColor * sceneDepth.z, 0.5);
+        vec4 color = vec4(uWaterColor, 1.0);
+        
+        // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
+        vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
+        vec2 depthCoords = vec2(ndc.x, ndc.y);
 
-        // Depth
-        // float near = 1.0;
-        // float far = 10.0;
-        // float z = gl_FragCoord.z;  // depth value [0,1]
-        // float ndcZ = 2.0 * z - 1.0;  // [-1,1]
-        // float linearDepth = (2.0 * near * far) / (far + near - ndcZ * (far - near));
-
-        // float depth = sceneDepth.z - linearDepth;
-        // gl_FragColor = vec4(vec3(linearDepth) / far, 1.0);
-        // this division is for better visualization
-
-        // vec3 diffuse = texture2D( tDiffuse, vUv ).rgb;
-        float depth = readDepth(tDepth, vUv);
-        gl_FragColor.rgb = 1.0 - vec3(depth);
-        gl_FragColor.a = 1.0;
+        // gl_FragColor = color;
+        // gl_FragColor = texture2D(uDiffuseMap, vUv);
+        // float depth = readDepth(uDepthMap, vUv);
+        float depth = texture2D(uDepthMap, depthCoords).x;
+        gl_FragColor = vec4(1.0 - vec3(depth), 1.0);
 
         // Fog
         // float fogDepth = gl_FragCoord.z / gl_FragCoord.w;

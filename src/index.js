@@ -73,6 +73,7 @@ let HEIGHT = window.innerHeight,
 	camera,
 	controls,
 	depthTarget,
+	// depthTarget2,
 	hemisphereLight,
 	mouse,
 	postprocessing = {},
@@ -247,8 +248,8 @@ function createScene() {
 	const nearPlane = 1;
 	const farPlane = 10000;
 	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-	// camera.position.set(0, 20, 45);	// far
-	camera.position.set(0, 1, 6);	 // close
+	camera.position.set(0, 20, 45);	// far
+	// camera.position.set(0, 1, 6);	 // close
 	// camera.rotation.set(10, 10, 10);
 
 	// Interaction
@@ -295,6 +296,7 @@ function onWindowResize() {
 	camera.updateProjectionMatrix();
 	renderer.setSize(WIDTH, HEIGHT);
 	depthTarget.setSize(WIDTH, HEIGHT);
+	// depthTarget2.setSize(WIDTH, HEIGHT);
 	// postprocessing.composer.setSize(window.innerWidth, window.innerHeight);
 	// ascii.setSize(WIDTH, HEIGHT);
 }
@@ -317,13 +319,15 @@ function update() {
 	// Depth buffer
 	renderer.setRenderTarget(depthTarget);
 	renderer.render(scene, camera);
-	
+	// renderer.setRenderTarget(depthTarget2);
+	// renderer.render(scene, camera);
+
 	// Regular render
 	renderer.setRenderTarget(null);
 	renderer.render(scene, camera);
-	
+
 	controls.update();	// only required if controls.enableDamping = true, or if controls.autoRotate = true
-	
+
 	// postprocessing.composer.render(0.1);
 	// ascii.render(scene, camera);
 	stats.update();
@@ -402,6 +406,16 @@ function depthBuffer() {
 	depthTarget.depthBuffer = true;
 	depthTarget.depthTexture = new DepthTexture();
 	depthTarget.depthTexture.type = UnsignedShortType;
+
+	// depthTarget2 = new WebGLRenderTarget(WIDTH, HEIGHT);
+	// depthTarget2.texture.format = RGBFormat;
+	// depthTarget2.texture.minFilter = NearestFilter;
+	// depthTarget2.texture.magFilter = NearestFilter;
+	// depthTarget2.texture.generateMipmaps = false;
+	// depthTarget2.stencilBuffer = false;
+	// depthTarget2.depthBuffer = true;
+	// depthTarget2.depthTexture = new DepthTexture();
+	// depthTarget2.depthTexture.type = UnsignedShortType;
 }
 
 function initialize() {
@@ -427,5 +441,6 @@ if (WEBGL.isWebGLAvailable()) {
 export {
 	camera,
 	depthTarget,
+	// depthTarget2,
 	scene
 };
