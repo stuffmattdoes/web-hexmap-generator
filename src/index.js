@@ -255,13 +255,16 @@ function createScene() {
 	// Interaction
 	mouse = new Vector2();
 	raycaster = new Raycaster();
-	
+
 	// Renderer
 	renderer = new WebGLRenderer({ 
 		alpha: true, 
-		antialias: true
+		antialias: true,
+		// localClippingEnabled: true
 	});
 
+	renderer.localClippingEnabled = true;
+	
 	renderer.setSize(WIDTH, HEIGHT);
 	// renderer.shadowMap.enabled = true;
 
@@ -280,8 +283,9 @@ function createutilities() {
 
 function populateScene() {
 	hexGrid = new HexGrid(64, 64);
+	scene.add(hexGrid);
 	water = new Water();
-	scene.add(hexGrid, water);
+	scene.add(water);
 }
 
 function createStats() {

@@ -33,7 +33,7 @@
         Must be of the same data type & variable name in both functions. A common
         example wold be a vertex's normal that would be used for lighting calculations
 */
-export const vertShader = `
+export const vertexShader = `
     /*  
     Provided by Three.js:
     uniform vec3 cameraPosition;    // camera position in world space
@@ -49,15 +49,24 @@ export const vertShader = `
     attribute vec2 uv;          // Coordinates for texture mapping (normalized from 0 to 1)
     */
 
-    varying vec2 vUv;
-    varying vec4 vClipSpace;
-    varying vec3 vPos;
-    varying vec3 vNormal;
+    // #include <clipping_planes_pars_vertex>
 
+    varying vec4 vClipSpace;
+    varying vec3 vNormal;
+    varying vec3 vPos;
+    varying vec2 vTextCoords;
+    varying vec2 vUv;
+
+    float tiling = 10.0;
+    
     void main() {
+        // #include <begin_vertex>
+
         vNormal = normal;
         vPos = position;
+        vTextCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) / tiling;
         vUv = uv;
+
         /*
             Multiply each vertex by the model-view matrix and the
             projection matrix to convert to clip-space
@@ -66,16 +75,22 @@ export const vertShader = `
         vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
         gl_Position = vClipSpace;
         // vClipSpace = position * 2.0 - 1.0;  // screen space
+        
+        // #include <project_vertex>
+        // #include <clipping_planes_vertex>
     }
 `;
 
-export const fragShader = `
+export const fragmentShader = `
     #include <packing>
+    // #include <clipping_planes_pars_fragment>
 
     // From vert
-    varying vec2 vUv;
     varying vec4 vClipSpace;
+    varying vec3 vNormal;
     varying vec3 vPos;
+    varying vec2 vTextCoords;
+    varying vec2 vUv;
 
     // Characteristics
     uniform sampler2D uSurfaceTexture;
@@ -85,11 +100,13 @@ export const fragShader = `
     uniform sampler2D uDiffuseMap;
     uniform sampler2D uDepthMap;
     // uniform sampler2D uDepthMap2;
+    uniform sampler2D uDistortionMap;
 
     uniform float uCameraNear;
     uniform float uCameraFar;
     uniform vec4 uScreenSize;
 
+    float waveStrength = 0.005;
     // Fog
     // uniform vec3 fogColor;
     // uniform float fogNear;
@@ -101,27 +118,38 @@ export const fragShader = `
         return viewZToOrthographicDepth(viewZ, uCameraNear, uCameraFar);
     }
 
-    float getLinearDepth(vec3 pos) {
-        return -(viewMatrix * vec4(pos, 1.0)).z;
-    }
+    // float getLinearDepth(vec3 pos) {
+    //     return -(viewMatrix * vec4(pos, 1.0)).z;
+    // }
 
-    float getLinearScreenDepth(sampler2D map) {
-        vec2 uv = gl_FragCoord.xy * uScreenSize.zw;
-        return readDepth(map, uv);
-    }
+    // float getLinearScreenDepth(sampler2D map) {
+    //     vec2 uv = gl_FragCoord.xy * uScreenSize.zw;
+    //     return readDepth(map, uv);
+    // }
 
     void main() {
+        // #include <clipping_planes_fragment>
+
         vec4 color = vec4(uWaterColor, 1.0);
-        
+        gl_FragColor = color;
+
+        // Sampling depth buffer
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
 
-        // gl_FragColor = color;
-        // gl_FragColor = texture2D(uDiffuseMap, vUv);
-        // float depth = readDepth(uDepthMap, vUv);
-        float depth = texture2D(uDepthMap, depthCoords).x;
-        gl_FragColor = vec4(1.0 - vec3(depth), 1.0);
+
+        // Distortion
+        vec2 distortion1 = (texture2D(uDistortionMap, vTextCoords).rg * 2.0 - 1.0) * waveStrength;
+        vec2 distortion2 = (texture2D(uDistortionMap, vec2(-vTextCoords.x, vTextCoords.y)).rg * 2.0 - 1.0) * waveStrength;
+        vec2 distortionSum = distortion1 + distortion2;
+        depthCoords += distortionSum;
+
+        float depth = readDepth(uDepthMap, depthCoords);
+        // float depth = texture2D(uDepthMap, depthCoords).x;
+        // float diff = (depth - gl_FragCoord.z);
+        // gl_FragColor.rgb *= 1.0 - vec3(depth);
+        gl_FragColor.rgb = mix(vec3(0.71, 1.0, 0.88), vec3(0.0, 0.08, 0.5), depth);
 
         // Fog
         // float fogDepth = gl_FragCoord.z / gl_FragCoord.w;

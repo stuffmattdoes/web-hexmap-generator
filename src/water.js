@@ -1,5 +1,6 @@
 /*
     TODO:
+    - Clipping plane
     - Reflection
     - Refraction
     - Subsurface light scattering
@@ -13,7 +14,8 @@ import {
     // MeshStandardMaterial,
     MeshPhongMaterial,
     NearestFilter,
-    PlaneGeometry,
+    Plane,
+    // PlaneGeometry,
     PlaneBufferGeometry,
     RepeatWrapping,
     RGBFormat,
@@ -27,7 +29,7 @@ import {
 } from 'three';
 import { createWireframe } from './util';
 import { camera, colors, depthTarget, scene } from '.';
-import { fragShader, vertShader } from './water.glsl.js';
+import { fragmentShader, vertexShader } from './water.glsl.js';
 
 function Water() {
     let h = 100,
@@ -41,6 +43,9 @@ function Water() {
     surfaceTexture.wrapS = RepeatWrapping;
     surfaceTexture.wrapT = RepeatWrapping;
 
+    const distortionTexture = textureLoader.load('/img/DuDv.jpeg');
+    distortionTexture.wrapS = RepeatWrapping;
+    distortionTexture.wrapT = RepeatWrapping;
     // const noiseTex = textureLoader.load('/img/tiling-perlin-noise.png');
     // noiseTex.wrapS = RepeatWrapping;
     // noiseTex.wrapT = RepeatWrapping;
@@ -52,16 +57,21 @@ function Water() {
 
     const { r, g, b } = colors.earth.m;
     const uniforms = {
+        // uClippingPlanes: [ clippingPlane ],
         uSurfaceTexture: { value: surfaceTexture },
 
         uCameraNear: { value: camera.near },
         // cameraFar: { value: camera.far },
-        uCameraFar: { value: 1000.0 },
+        uCameraFar: { value: 10.0 },
         uDiffuseMap: { value: depthTarget.texture },
         uDepthMap: { value: depthTarget.depthTexture },
         // uDepthMap2: { value: depthTarget2.depthTexture },
+        uDistortionMap: { value: distortionTexture },
 
         uWaterColor: { value: new Vector3(r, g, b) },
+        uWaterColorSurface: { value: new Vector3(r, g, b) },
+        uWaterColorDeep: { value: new Vector3(r, g, b) },
+
         uFogColor: { value: scene.fog.color },
         uFogFar: { value: scene.fog.far },
         uFogNear: { value: scene.fog.near },
@@ -75,13 +85,15 @@ function Water() {
     };
 
 	const material = new ShaderMaterial({
+        clipping: true,
+        clippingPlanes: [ new Plane(new Vector3(0, -1, 0), 0) ],
         // depthTest: false,
         // fog: true,   // for USE_FOG conditional in shader
-        fragmentShader: fragShader,
+        fragmentShader,
         // lighting: true,
         transparent: true,
-        uniforms: uniforms,
-        vertexShader: vertShader
+        uniforms,
+        vertexShader
     });
 
     material.extensions = {
