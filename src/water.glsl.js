@@ -54,8 +54,10 @@ export const vertexShader = `
     varying vec4 vClipSpace;
     varying vec3 vNormal;
     varying vec3 vPos;
-    varying vec2 vTextCoords;
+    varying vec2 vTexCoords;
     varying vec2 vUv;
+
+    // uniform vec3 lightPosition;
 
     float tiling = 10.0;
     
@@ -64,7 +66,7 @@ export const vertexShader = `
 
         vNormal = normal;
         vPos = position;
-        vTextCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) / tiling;
+        vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) / tiling;
         vUv = uv;
 
         /*
@@ -89,7 +91,7 @@ export const fragmentShader = `
     varying vec4 vClipSpace;
     varying vec3 vNormal;
     varying vec3 vPos;
-    varying vec2 vTextCoords;
+    varying vec2 vTexCoords;
     varying vec2 vUv;
 
     // Characteristics
@@ -100,15 +102,16 @@ export const fragmentShader = `
     // Depth
     uniform sampler2D uDiffuseMap;
     uniform sampler2D uDepthMap;
-    // uniform sampler2D uDepthMap2;
     uniform sampler2D uDistortionMap;
+    uniform sampler2D uNormalMap;
 
     uniform float uCameraNear;
     uniform float uCameraFar;
     uniform vec4 uScreenSize;
 
-    float waveAmplitude = 0.005;
-    float flowSpeed = 0.05;
+    float waveAmplitude = 0.01;
+    float flowSpeed = 0.03;
+    // vec3 lightColor = vec3(1.0, 1.0, 1.0);
 
     // Fog
     // uniform vec3 fogColor;
@@ -140,32 +143,27 @@ export const fragmentShader = `
         gl_FragColor = color;
 
         // Distortion
-        flowSpeed *= uTime;
-        vec2 distortion1 = toClipSpace(texture2D(
-            uDistortionMap,
-            vec2(vTextCoords.x + flowSpeed, vTextCoords.y)
-        ).rg);
-        distortion1 *= waveAmplitude;
-
-        vec2 distortion2 = toClipSpace(texture2D(
-            uDistortionMap,
-            vec2(-vTextCoords.x - flowSpeed, vTextCoords.y + flowSpeed)
-        ).rg);
-        distortion2 *= waveAmplitude;
-
-        vec2 distortionSum = distortion1 + distortion2;
+        float moveFactor = flowSpeed * uTime;
+        vec2 distortedTexCoords = texture2D(uDistortionMap, vec2(vTexCoords.x + moveFactor, vTexCoords.y)).rg * 0.1;
+        distortedTexCoords = vTexCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
+        vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * waveAmplitude;
 
         // Depth
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
-        depthCoords += distortionSum;
+        depthCoords += totalDistortion;
         // depthCoords = clamp(depthCoords, 0.001, 0.999);
         float depth = readDepth(uDepthMap, depthCoords);
         // float depth = texture2D(uDepthMap, depthCoords).x;
         // float diff = (depth - gl_FragCoord.z);
         // gl_FragColor.rgb *= 1.0 - vec3(depth);
         gl_FragColor.rgb = mix(vec3(0.71, 1.0, 0.88), vec3(0.0, 0.08, 0.5), depth);
+
+        // Normals
+        vec4 normalMapColor = texture2D(uNormalMap, distortedTexCoords);
+        vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
+        normal = normalize(normal);
 
         // Fog
         // float fogDepth = gl_FragCoord.z / gl_FragCoord.w;

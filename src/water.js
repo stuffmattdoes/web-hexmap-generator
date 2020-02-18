@@ -46,12 +46,12 @@ function Water() {
     // surfaceTexture.wrapT = RepeatWrapping;
 
     const distortionTexture = textureLoader.load('/img/water_dudv.png');
-    // distortionTexture.wrapS = RepeatWrapping;
-    // distortionTexture.wrapT = RepeatWrapping;
+    distortionTexture.wrapS = RepeatWrapping;
+    distortionTexture.wrapT = RepeatWrapping;
 
     const normalTexture = textureLoader.load('/img/water_normal.png');
-    // normalMap1.wrapS = RepeatWrapping;
-    // normalMap1.wrapT = RepeatWrapping;
+    normalTexture.wrapS = RepeatWrapping;
+    normalTexture.wrapT = RepeatWrapping;
 
     const { r, g, b } = colors.earth.m;
     this.uniforms = {
@@ -75,8 +75,6 @@ function Water() {
         uFogColor: { value: scene.fog.color },
         uFogFar: { value: scene.fog.far },
         uFogNear: { value: scene.fog.near },
-        // noiseTex: { value: noiseTex },
-        // normalMap1: { value: normalMap1 }
         // colorTop: '#0000ff',
 		// colorDepth: '#00ff00',
 		// depthMaxDistance: 2,
