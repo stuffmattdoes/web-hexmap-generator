@@ -93,7 +93,7 @@ export const fragmentShader = `
     varying vec2 vUv;
 
     // Characteristics
-    uniform sampler2D uSurfaceTexture;
+    // uniform sampler2D uSurfaceTexture;
     uniform vec3 uWaterColor;
     uniform float uTime;
     
@@ -115,10 +115,14 @@ export const fragmentShader = `
     // uniform float fogNear;
     // uniform float fogFar;
 
-    float readDepth (sampler2D depthSampler, vec2 coord) {
+    float readDepth(sampler2D depthSampler, vec2 coord) {
         float fragCoordZ = texture2D(depthSampler, coord).x;
         float viewZ = perspectiveDepthToViewZ(fragCoordZ, uCameraNear, uCameraFar);
         return viewZToOrthographicDepth(viewZ, uCameraNear, uCameraFar);
+    }
+
+    vec2 toClipSpace(vec2 uv) {
+        return uv * 2.0 - 1.0;
     }
 
     // float getLinearDepth(vec3 pos) {
@@ -135,21 +139,28 @@ export const fragmentShader = `
         vec4 color = vec4(uWaterColor, 1.0);
         gl_FragColor = color;
 
-        // Sampling depth buffer
+        // Distortion
+        flowSpeed *= uTime;
+        vec2 distortion1 = toClipSpace(texture2D(
+            uDistortionMap,
+            vec2(vTextCoords.x + flowSpeed, vTextCoords.y)
+        ).rg);
+        distortion1 *= waveAmplitude;
+
+        vec2 distortion2 = toClipSpace(texture2D(
+            uDistortionMap,
+            vec2(-vTextCoords.x - flowSpeed, vTextCoords.y + flowSpeed)
+        ).rg);
+        distortion2 *= waveAmplitude;
+
+        vec2 distortionSum = distortion1 + distortion2;
+
+        // Depth
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
-
-
-        // Distortion
-        flowSpeed *= uTime;
-        vec2 distortion1 = (texture2D(uDistortionMap, vec2(vTextCoords.x + flowSpeed, vTextCoords.y)).rg * 2.0 - 1.0);
-        distortion1 *= waveAmplitude;
-        vec2 distortion2 = (texture2D(uDistortionMap, vec2(-vTextCoords.x + flowSpeed, vTextCoords.y)).rg * 2.0 - 1.0);
-        distortion2 *= waveAmplitude;
-        vec2 distortionSum = distortion1 + distortion2;
-        depthCoords += distortionSum;   
-
+        depthCoords += distortionSum;
+        // depthCoords = clamp(depthCoords, 0.001, 0.999);
         float depth = readDepth(uDepthMap, depthCoords);
         // float depth = texture2D(uDepthMap, depthCoords).x;
         // float diff = (depth - gl_FragCoord.z);

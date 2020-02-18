@@ -41,26 +41,22 @@ function Water() {
     
     geometry.name = 'Water';
 
-    const surfaceTexture = textureLoader.load('/img/water_bw.png');
-    surfaceTexture.wrapS = RepeatWrapping;
-    surfaceTexture.wrapT = RepeatWrapping;
+    // const surfaceTexture = textureLoader.load('/img/water_bw.png');
+    // surfaceTexture.wrapS = RepeatWrapping;
+    // surfaceTexture.wrapT = RepeatWrapping;
 
-    const distortionTexture = textureLoader.load('/img/DuDv.jpeg');
-    distortionTexture.wrapS = RepeatWrapping;
-    distortionTexture.wrapT = RepeatWrapping;
-    // const noiseTex = textureLoader.load('/img/tiling-perlin-noise.png');
-    // noiseTex.wrapS = RepeatWrapping;
-    // noiseTex.wrapT = RepeatWrapping;
-    // noiseTex.repeat.set(w, h);
+    const distortionTexture = textureLoader.load('/img/water_dudv.png');
+    // distortionTexture.wrapS = RepeatWrapping;
+    // distortionTexture.wrapT = RepeatWrapping;
 
-    // const normalMap1 = textureLoader.load('/img/water_normal_1.png');
+    const normalTexture = textureLoader.load('/img/water_normal.png');
     // normalMap1.wrapS = RepeatWrapping;
     // normalMap1.wrapT = RepeatWrapping;
 
     const { r, g, b } = colors.earth.m;
     this.uniforms = {
         // uClippingPlanes: [ clippingPlane ],
-        uSurfaceTexture: { value: surfaceTexture },
+        // uSurfaceTexture: { value: surfaceTexture },
 
         uCameraNear: { value: camera.near },
         // cameraFar: { value: camera.far },
@@ -69,6 +65,7 @@ function Water() {
         uDepthMap: { value: depthTarget.depthTexture },
         // uDepthMap2: { value: depthTarget2.depthTexture },
         uDistortionMap: { value: distortionTexture },
+        uNormalMap: { value: normalTexture },
         uTime: { value: 0 },
 
         uWaterColor: { value: new Vector3(r, g, b) },
