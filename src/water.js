@@ -7,6 +7,7 @@
 */
 
 import {
+    Clock,
     DepthTexture,
     ImageUtils,
     Math as ThreeMath,
@@ -32,6 +33,7 @@ import { camera, colors, depthTarget, scene } from '.';
 import { fragmentShader, vertexShader } from './water.glsl.js';
 
 function Water() {
+    this.clock = new Clock();
     let h = 100,
         w = 100,
         geometry = new PlaneBufferGeometry(w, h),
@@ -56,7 +58,7 @@ function Water() {
     // normalMap1.wrapT = RepeatWrapping;
 
     const { r, g, b } = colors.earth.m;
-    const uniforms = {
+    this.uniforms = {
         // uClippingPlanes: [ clippingPlane ],
         uSurfaceTexture: { value: surfaceTexture },
 
@@ -67,6 +69,7 @@ function Water() {
         uDepthMap: { value: depthTarget.depthTexture },
         // uDepthMap2: { value: depthTarget2.depthTexture },
         uDistortionMap: { value: distortionTexture },
+        uTime: { value: 0 },
 
         uWaterColor: { value: new Vector3(r, g, b) },
         uWaterColorSurface: { value: new Vector3(r, g, b) },
@@ -92,7 +95,7 @@ function Water() {
         fragmentShader,
         // lighting: true,
         transparent: true,
-        uniforms,
+        uniforms: this.uniforms,
         vertexShader
     });
 
@@ -116,7 +119,17 @@ function Water() {
     const wireframe = createWireframe(geometry);
     mesh.add(wireframe);
 
+    this.animate();
+
     return mesh;
+}
+
+Water.prototype = {
+    animate: function() {
+        requestAnimationFrame(this.animate.bind(this));
+        const delta = this.clock.getDelta();
+        this.uniforms['uTime'].value += delta;
+    }
 }
 
 export default Water;

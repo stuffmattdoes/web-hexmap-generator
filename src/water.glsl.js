@@ -95,6 +95,7 @@ export const fragmentShader = `
     // Characteristics
     uniform sampler2D uSurfaceTexture;
     uniform vec3 uWaterColor;
+    uniform float uTime;
     
     // Depth
     uniform sampler2D uDiffuseMap;
@@ -106,7 +107,9 @@ export const fragmentShader = `
     uniform float uCameraFar;
     uniform vec4 uScreenSize;
 
-    float waveStrength = 0.005;
+    float waveAmplitude = 0.005;
+    float flowSpeed = 0.05;
+
     // Fog
     // uniform vec3 fogColor;
     // uniform float fogNear;
@@ -129,7 +132,6 @@ export const fragmentShader = `
 
     void main() {
         // #include <clipping_planes_fragment>
-
         vec4 color = vec4(uWaterColor, 1.0);
         gl_FragColor = color;
 
@@ -140,10 +142,13 @@ export const fragmentShader = `
 
 
         // Distortion
-        vec2 distortion1 = (texture2D(uDistortionMap, vTextCoords).rg * 2.0 - 1.0) * waveStrength;
-        vec2 distortion2 = (texture2D(uDistortionMap, vec2(-vTextCoords.x, vTextCoords.y)).rg * 2.0 - 1.0) * waveStrength;
+        flowSpeed *= uTime;
+        vec2 distortion1 = (texture2D(uDistortionMap, vec2(vTextCoords.x + flowSpeed, vTextCoords.y)).rg * 2.0 - 1.0);
+        distortion1 *= waveAmplitude;
+        vec2 distortion2 = (texture2D(uDistortionMap, vec2(-vTextCoords.x + flowSpeed, vTextCoords.y)).rg * 2.0 - 1.0);
+        distortion2 *= waveAmplitude;
         vec2 distortionSum = distortion1 + distortion2;
-        depthCoords += distortionSum;
+        depthCoords += distortionSum;   
 
         float depth = readDepth(uDepthMap, depthCoords);
         // float depth = texture2D(uDepthMap, depthCoords).x;
