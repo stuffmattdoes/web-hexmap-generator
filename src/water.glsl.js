@@ -49,24 +49,18 @@ export const vertexShader = `
     attribute vec2 uv;          // Coordinates for texture mapping (normalized from 0 to 1)
     */
 
-    // #include <clipping_planes_pars_vertex>
-
     varying vec4 vClipSpace;
     varying vec3 vNormal;
     varying vec3 vPos;
     varying vec2 vTexCoords;
     varying vec2 vUv;
 
-    // uniform vec3 lightPosition;
-
-    float tiling = 10.0;
+    uniform float uTiling;
     
     void main() {
-        // #include <begin_vertex>
-
         vNormal = normal;
         vPos = position;
-        vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) / tiling;
+        vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) * uTiling;
         vUv = uv;
 
         /*
@@ -77,15 +71,11 @@ export const vertexShader = `
         vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
         gl_Position = vClipSpace;
         // vClipSpace = position * 2.0 - 1.0;  // screen space
-        
-        // #include <project_vertex>
-        // #include <clipping_planes_vertex>
     }
 `;
 
 export const fragmentShader = `
     #include <packing>
-    // #include <clipping_planes_pars_fragment>
 
     // From vert
     varying vec4 vClipSpace;
@@ -97,6 +87,8 @@ export const fragmentShader = `
     // Characteristics
     // uniform sampler2D uSurfaceTexture;
     uniform vec3 uWaterColor;
+    uniform vec3 uWaterColorShallow;
+    uniform vec3 uWaterColorDeep;
     uniform float uTime;
     
     // Depth
@@ -109,14 +101,17 @@ export const fragmentShader = `
     uniform float uCameraFar;
     uniform vec4 uScreenSize;
 
-    float waveAmplitude = 0.01;
-    float flowSpeed = 0.03;
-    // vec3 lightColor = vec3(1.0, 1.0, 1.0);
-
     // Fog
-    // uniform vec3 fogColor;
-    // uniform float fogNear;
-    // uniform float fogFar;
+    uniform vec3 uFogColor;
+    uniform float uFogNear;
+    uniform float uFogFar;
+
+    float distortionStrength = 0.015;
+    float flowSpeed = 0.01;
+    float surfaceNoiseCutoff = 0.7;
+    float specularIntensity = 0.05;
+    float murkiness = 0.85;
+    float shorelineDepth = 1.0;
 
     float readDepth(sampler2D depthSampler, vec2 coord) {
         float fragCoordZ = texture2D(depthSampler, coord).x;
@@ -126,6 +121,19 @@ export const fragmentShader = `
 
     vec2 toClipSpace(vec2 uv) {
         return uv * 2.0 - 1.0;
+    }
+
+    float toLinearDepth(float depth) {
+        //        2.0 * uCameraNear * uCameraFar / (
+        //     uCameraFar + uCameraNear
+        //     - (2.0 * depth - 1.0
+        //      * (uCameraFar - uCameraNear)
+        // );
+        return 2.0 * uCameraNear * uCameraFar / (
+            uCameraFar + uCameraNear
+            - (2.0 * depth - 1.0)
+            * (uCameraFar - uCameraNear)
+        );
     }
 
     // float getLinearDepth(vec3 pos) {
@@ -138,36 +146,51 @@ export const fragmentShader = `
     // }
 
     void main() {
-        // #include <clipping_planes_fragment>
         vec4 color = vec4(uWaterColor, 1.0);
         gl_FragColor = color;
 
         // Distortion
         float moveFactor = flowSpeed * uTime;
+
         vec2 distortedTexCoords = texture2D(uDistortionMap, vec2(vTexCoords.x + moveFactor, vTexCoords.y)).rg * 0.1;
         distortedTexCoords = vTexCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
-        vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * waveAmplitude;
+        vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * distortionStrength;
 
         // Depth
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
-        depthCoords += totalDistortion;
+        // depthCoords += totalDistortion;
         // depthCoords = clamp(depthCoords, 0.001, 0.999);
-        float depth = readDepth(uDepthMap, depthCoords);
-        // float depth = texture2D(uDepthMap, depthCoords).x;
-        // float diff = (depth - gl_FragCoord.z);
-        // gl_FragColor.rgb *= 1.0 - vec3(depth);
-        gl_FragColor.rgb = mix(vec3(0.71, 1.0, 0.88), vec3(0.0, 0.08, 0.5), depth);
+
+        // float sceneDepth = readDepth(uDepthMap, depthCoords);    // linearized depth sample
+        float sceneDepth = texture2D(uDepthMap, depthCoords).r;
+        float floorDistance = toLinearDepth(sceneDepth);
+        float surfaceDistance = toLinearDepth(gl_FragCoord.z);
+        float waterDepth = floorDistance - surfaceDistance;
+        // waterDepth = exp(-waterDepth * murkiness);  // Beers law
+        gl_FragColor.rgb *= mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
+
+        // Soft edges & foam lines
+        vec4 normalMapColor = texture2D(uNormalMap, distortedTexCoords);
+        vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
+        float shoreline = clamp(waterDepth / shorelineDepth, 0.0, 1.0);
+        // shoreline *= normalMapColor.r > 0.5 ? 1.0 : 0.0;
+        // gl_FragColor.rgb += shoreline * diffuse.rgb * uWaterColorShallow;
+        // gl_FragColor.a *= clamp(1.0 - waterDepth / shorelineDepth, 0.0, 1.0);
 
         // Normals
-        vec4 normalMapColor = texture2D(uNormalMap, distortedTexCoords);
+        // vec4 normalMapColor = texture2D(uNormalMap, distortedTexCoords);
         vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
         normal = normalize(normal);
+        float surfaceNoise = normalMapColor.r > surfaceNoiseCutoff
+            ? normalMapColor.r * specularIntensity : 0.0;
+
+        gl_FragColor += surfaceNoise;
 
         // Fog
-        // float fogDepth = gl_FragCoord.z / gl_FragCoord.w;
-        // float fogFactor = smoothstep(fogNear, fogFar, fogDepth);
-        // gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+        float fogDepth = gl_FragCoord.z / gl_FragCoord.w;
+        float fogFactor = smoothstep(uFogNear, uFogFar, fogDepth);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, uFogColor, fogFactor);
     }
 `;

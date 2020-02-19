@@ -57,20 +57,20 @@ function Water() {
     this.uniforms = {
         // uClippingPlanes: [ clippingPlane ],
         // uSurfaceTexture: { value: surfaceTexture },
-
         uCameraNear: { value: camera.near },
         // cameraFar: { value: camera.far },
-        uCameraFar: { value: 10.0 },
+        uCameraFar: { value: camera.far },
         uDiffuseMap: { value: depthTarget.texture },
         uDepthMap: { value: depthTarget.depthTexture },
         // uDepthMap2: { value: depthTarget2.depthTexture },
         uDistortionMap: { value: distortionTexture },
         uNormalMap: { value: normalTexture },
+        uTiling: { value: 0.05 },
         uTime: { value: 0 },
 
         uWaterColor: { value: new Vector3(r, g, b) },
-        uWaterColorSurface: { value: new Vector3(r, g, b) },
-        uWaterColorDeep: { value: new Vector3(r, g, b) },
+        uWaterColorDeep: { value: new Vector3(0.0, 0.08, 0.5) },
+        uWaterColorShallow: { value: new Vector3(0.71, 1.0, 0.88) },
 
         uFogColor: { value: scene.fog.color },
         uFogFar: { value: scene.fog.far },
