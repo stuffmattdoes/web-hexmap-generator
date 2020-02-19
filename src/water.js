@@ -52,34 +52,28 @@ function Water() {
     const normalTexture = textureLoader.load('/img/water_normal.png');
     normalTexture.wrapS = RepeatWrapping;
     normalTexture.wrapT = RepeatWrapping;
-
-    const { r, g, b } = colors.earth.m;
+;
     this.uniforms = {
-        // uClippingPlanes: [ clippingPlane ],
-        // uSurfaceTexture: { value: surfaceTexture },
-        uCameraNear: { value: camera.near },
-        // cameraFar: { value: camera.far },
-        uCameraFar: { value: camera.far },
-        uDiffuseMap: { value: depthTarget.texture },
-        uDepthMap: { value: depthTarget.depthTexture },
-        // uDepthMap2: { value: depthTarget2.depthTexture },
-        uDistortionMap: { value: distortionTexture },
-        uNormalMap: { value: normalTexture },
         uTiling: { value: 0.05 },
         uTime: { value: 0 },
 
-        uWaterColor: { value: new Vector3(r, g, b) },
-        uWaterColorDeep: { value: new Vector3(0.0, 0.08, 0.5) },
-        uWaterColorShallow: { value: new Vector3(0.71, 1.0, 0.88) },
+        // uClippingPlanes: [ clippingPlane ],
+        // uSurfaceTexture: { value: surfaceTexture },
+        uCameraNear: { value: camera.near },
+        uCameraFar: { value: camera.far },
+        uDiffuseMap: { value: depthTarget.texture },
+        uDepthMap: { value: depthTarget.depthTexture },
+        uDistortionMap: { value: distortionTexture },
+        uNormalMap: { value: normalTexture },
 
+        // Color
+        uWaterColorDeep: { value: new Vector3(colors.water.e.r, colors.water.e.g, colors.water.e.b) },
+        uWaterColorShallow: { value: new Vector3(colors.water.b.r, colors.water.b.g, colors.water.b.b) },
+
+        // Fog
         uFogColor: { value: scene.fog.color },
         uFogFar: { value: scene.fog.far },
         uFogNear: { value: scene.fog.near },
-        // colorTop: '#0000ff',
-		// colorDepth: '#00ff00',
-		// depthMaxDistance: 2,
-        // time: { value: 1.0 },
-        // 'uvScale': { value: new Vector2(3.0, 1.0) },
     };
 
 	const material = new ShaderMaterial({

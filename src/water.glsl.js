@@ -50,18 +50,18 @@ export const vertexShader = `
     */
 
     varying vec4 vClipSpace;
-    varying vec3 vNormal;
-    varying vec3 vPos;
+    // varying vec3 vNormal;
+    // varying vec3 vPos;
     varying vec2 vTexCoords;
-    varying vec2 vUv;
+    // varying vec2 vUv;
 
     uniform float uTiling;
     
     void main() {
-        vNormal = normal;
-        vPos = position;
+        // vNormal = normal;
+        // vPos = position;
         vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) * uTiling;
-        vUv = uv;
+        // vUv = uv;
 
         /*
             Multiply each vertex by the model-view matrix and the
@@ -75,18 +75,17 @@ export const vertexShader = `
 `;
 
 export const fragmentShader = `
-    #include <packing>
+    // #include <packing>
 
     // From vert
     varying vec4 vClipSpace;
-    varying vec3 vNormal;
-    varying vec3 vPos;
+    // varying vec3 vNormal;
+    // varying vec3 vPos;
     varying vec2 vTexCoords;
-    varying vec2 vUv;
+    // varying vec2 vUv;
 
     // Characteristics
     // uniform sampler2D uSurfaceTexture;
-    uniform vec3 uWaterColor;
     uniform vec3 uWaterColorShallow;
     uniform vec3 uWaterColorDeep;
     uniform float uTime;
@@ -106,29 +105,17 @@ export const fragmentShader = `
     uniform float uFogNear;
     uniform float uFogFar;
 
-    float distortionStrength = 0.015;
-    float flowSpeed = 0.01;
-    float surfaceNoiseCutoff = 0.7;
-    float specularIntensity = 0.05;
-    float murkiness = 0.85;
-    float shorelineDepth = 1.0;
-
-    float readDepth(sampler2D depthSampler, vec2 coord) {
-        float fragCoordZ = texture2D(depthSampler, coord).x;
-        float viewZ = perspectiveDepthToViewZ(fragCoordZ, uCameraNear, uCameraFar);
-        return viewZToOrthographicDepth(viewZ, uCameraNear, uCameraFar);
-    }
+    // float distortionStrength = 0.015;
+    // float flowSpeed = 0.01;
+    // float surfaceNoiseCutoff = 0.7;
+    float murkiness = 0.84;
+    float shoreDepth = 0.25;
 
     vec2 toClipSpace(vec2 uv) {
         return uv * 2.0 - 1.0;
     }
 
     float toLinearDepth(float depth) {
-        //        2.0 * uCameraNear * uCameraFar / (
-        //     uCameraFar + uCameraNear
-        //     - (2.0 * depth - 1.0
-        //      * (uCameraFar - uCameraNear)
-        // );
         return 2.0 * uCameraNear * uCameraFar / (
             uCameraFar + uCameraNear
             - (2.0 * depth - 1.0)
@@ -146,47 +133,50 @@ export const fragmentShader = `
     // }
 
     void main() {
-        vec4 color = vec4(uWaterColor, 1.0);
-        gl_FragColor = color;
+        gl_FragColor = vec4(1.0);
 
         // Distortion
-        float moveFactor = flowSpeed * uTime;
-
-        vec2 distortedTexCoords = texture2D(uDistortionMap, vec2(vTexCoords.x + moveFactor, vTexCoords.y)).rg * 0.1;
-        distortedTexCoords = vTexCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
-        vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * distortionStrength;
+        // float moveFactor = flowSpeed * uTime;
+        // vec2 distortedTexCoords = texture2D(uDistortionMap, vec2(vTexCoords.x + moveFactor, vTexCoords.y)).rg * 0.1;
+        // distortedTexCoords = vTexCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
+        // vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * distortionStrength;
 
         // Depth
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
-        // depthCoords += totalDistortion;
-        // depthCoords = clamp(depthCoords, 0.001, 0.999);
+        // vec2 distortionCoords = depthCoords + totalDistortion;
+        // distortionCoords = clamp(depthCoords, 0.001, 0.999);
 
-        // float sceneDepth = readDepth(uDepthMap, depthCoords);    // linearized depth sample
         float sceneDepth = texture2D(uDepthMap, depthCoords).r;
         float floorDistance = toLinearDepth(sceneDepth);
         float surfaceDistance = toLinearDepth(gl_FragCoord.z);
         float waterDepth = floorDistance - surfaceDistance;
-        // waterDepth = exp(-waterDepth * murkiness);  // Beers law
-        gl_FragColor.rgb *= mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
+        // float shoreline = waterDepth < shoreDepth ? mix(0.0, 1.0, 1.0 - waterDepth / shoreDepth) : 0.0;
+        waterDepth = 1.0 - exp(-waterDepth * murkiness);  // Beers law for linearization. Why use this if using toLinearDepth??
+        gl_FragColor.rgb = mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
 
         // Soft edges & foam lines
-        vec4 normalMapColor = texture2D(uNormalMap, distortedTexCoords);
-        vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
-        float shoreline = clamp(waterDepth / shorelineDepth, 0.0, 1.0);
-        // shoreline *= normalMapColor.r > 0.5 ? 1.0 : 0.0;
+        // vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
+        // float shoreline = clamp(waterDepth / shoreDepth, 0.0, 1.0);
+        vec3 shoreline = waterDepth < shoreDepth ? 
+            mix(gl_FragColor.rgb, vec3(1.0), 1.0 - waterDepth / shoreDepth)
+            : gl_FragColor.rgb;
+
+        // float foam = texture2D(uNormalMap, vTexCoords * 4.0).r;
+        // shoreline *= foam > 0.5 ? 1.0 : 0.0;
         // gl_FragColor.rgb += shoreline * diffuse.rgb * uWaterColorShallow;
-        // gl_FragColor.a *= clamp(1.0 - waterDepth / shorelineDepth, 0.0, 1.0);
+        // gl_FragColor.a *= clamp(waterDepth / shoreDepth, 0.0, 1.0);
+        gl_FragColor.rgb = shoreline;
 
         // Normals
         // vec4 normalMapColor = texture2D(uNormalMap, distortedTexCoords);
-        vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
-        normal = normalize(normal);
-        float surfaceNoise = normalMapColor.r > surfaceNoiseCutoff
-            ? normalMapColor.r * specularIntensity : 0.0;
+        // vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
+        // normal = normalize(normal);
+        // float surfaceNoise = normalMapColor.r > surfaceNoiseCutoff
+        //     ? normalMapColor.r * specularIntensity : 0.0;
 
-        gl_FragColor += surfaceNoise;
+        // gl_FragColor += surfaceNoise;
 
         // Fog
         float fogDepth = gl_FragCoord.z / gl_FragCoord.w;

@@ -64,6 +64,13 @@ export const colors = {
 		m: new Color('#4e6172'),
 		n: new Color('#83929f'),
 		o: new Color('#a3adb8')
+	},
+	water: {
+		a: new Color('#D3F3EE'),
+		b: new Color('#7BD8C1'),
+		c: new Color('#7FB7BE'),
+		d: new Color('#53A0BC'),
+		e: new Color('#154C7C'),
 	}
 };
 
