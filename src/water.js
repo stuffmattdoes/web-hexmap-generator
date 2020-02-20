@@ -52,9 +52,12 @@ function Water() {
     const normalTexture = textureLoader.load('/img/water_normal.png');
     normalTexture.wrapS = RepeatWrapping;
     normalTexture.wrapT = RepeatWrapping;
+
+    const foamTexture = textureLoader.load('/img/water_foam.png');
+    foamTexture.wrapS = RepeatWrapping;
+    foamTexture.wrapT = RepeatWrapping;
 ;
     this.uniforms = {
-        uTiling: { value: 0.05 },
         uTime: { value: 0 },
 
         // uClippingPlanes: [ clippingPlane ],
@@ -65,6 +68,7 @@ function Water() {
         uDepthMap: { value: depthTarget.depthTexture },
         uDistortionMap: { value: distortionTexture },
         uNormalMap: { value: normalTexture },
+        uWaterFoam: { value: foamTexture },
 
         // Color
         uWaterColorDeep: { value: new Vector3(colors.water.e.r, colors.water.e.g, colors.water.e.b) },
