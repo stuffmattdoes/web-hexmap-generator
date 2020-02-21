@@ -66,11 +66,6 @@ export const vertexShader = `
         vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) * tiling;
         // vUv = uv;
 
-        /*
-            Multiply each vertex by the model-view matrix and the
-            projection matrix to convert to clip-space
-        */
-        // gl_ClipDistance[0] = 1;  // gl_ClipDisance undefined in Three.js ?
         vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
         float amplitude = 0.5;
         float wavelength = 10.0;
@@ -79,8 +74,7 @@ export const vertexShader = `
         float k = 2.0 * PI / wavelength;
 		float f = k * (position.x - velocity * uTime);
         vClipSpace.x += amplitude * cos(f);
-        vClipSpace.y += amplitude * sin(f);
-        
+        vClipSpace.y += amplitude * sin(f);        
         // vClipSpace.y += amplitude * sin(k * (position.x - velocity * uTime));    // Sine wave
 
         // vClipSpace.y += sin(uTime * waveVelocity * 1.1 - position.x)
@@ -90,8 +84,6 @@ export const vertexShader = `
 `;
 
 export const fragmentShader = `
-    // #include <packing>
-
     // From vert
     varying vec4 vClipSpace;
     // varying vec3 vNormal;
@@ -124,7 +116,6 @@ export const fragmentShader = `
     float distortionStrength = 0.02;
     float flowSpeed = 0.01;
     float surfaceNoiseCutoff = 0.7;
-    float murkiness = 0.9;
 
     vec2 toClipSpace(vec2 uv) {
         return uv * 2.0 - 1.0;
@@ -137,15 +128,6 @@ export const fragmentShader = `
             * (uCameraFar - uCameraNear)
         );
     }
-
-    // float getLinearDepth(vec3 pos) {
-    //     return -(viewMatrix * vec4(pos, 1.0)).z;
-    // }
-
-    // float getLinearScreenDepth(sampler2D map) {
-    //     vec2 uv = gl_FragCoord.xy * uScreenSize.zw;
-    //     return readDepth(map, uv);
-    // }
 
     void main() {
         gl_FragColor = vec4(1.0);
@@ -167,6 +149,7 @@ export const fragmentShader = `
         float floorDistance = toLinearDepth(sceneDepth);
         float surfaceDistance = toLinearDepth(gl_FragCoord.z);
         float waterDepth = floorDistance - surfaceDistance;
+        float murkiness = 0.7;
         waterDepth = 1.0 - exp(-waterDepth * murkiness);  // Beers law for murkiness
         gl_FragColor.rgb = mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
 
@@ -178,10 +161,8 @@ export const fragmentShader = `
 
         // Soft edges & foam lines
         float shoreDepth = 1.0;
-        // vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
+        vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
 
-        // TODO
-        // linear falloff
         if (waterDepth < shoreDepth) {
             float foamMovement = uTime * 0.0025;
             float scaledUv = 3.0;
@@ -193,9 +174,11 @@ export const fragmentShader = `
             foamTex = foamTex < falloff / 1.5 ? 1.0 : 0.0;
             falloff = pow(falloff, 2.0);
             foamTex *= falloff;
+            gl_FragColor.rgb += vec3(foamTex);
+
+            // Soft leading edge
             float foamEdge = clamp(waterDepth / (shoreDepth * 0.25), 0.0, 1.0);
             gl_FragColor.a = foamEdge;
-            gl_FragColor.rgb += vec3(foamTex);
         }
 
         // Normals

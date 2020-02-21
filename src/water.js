@@ -38,7 +38,7 @@ function Water() {
         w = 100,
         geometry = new PlaneBufferGeometry(w, h, 50, 50),
         textureLoader = new TextureLoader();
-    
+
     geometry.name = 'Water';
 
     // const surfaceTexture = textureLoader.load('/img/water_bw.png');
