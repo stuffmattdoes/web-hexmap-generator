@@ -49,18 +49,23 @@ export const vertexShader = `
     attribute vec2 uv;          // Coordinates for texture mapping (normalized from 0 to 1)
     */
 
+    uniform float uTime;
+
     varying vec4 vClipSpace;
     // varying vec3 vNormal;
     // varying vec3 vPos;
     varying vec2 vTexCoords;
     // varying vec2 vUv;
 
+    float amp = 0.1;
+    float freq = 0.1;
     float tiling = 0.05;
     
     void main() {
         // vNormal = normal;
         // vPos = position;
         vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) * tiling;
+        // vTexCoords.x += sin(uTime) * amp * freq;
         // vUv = uv;
 
         /*
@@ -106,7 +111,7 @@ export const fragmentShader = `
     uniform float uFogNear;
     uniform float uFogFar;
 
-    float distortionStrength = 0.015;
+    float distortionStrength = 0.02;
     float flowSpeed = 0.01;
     float surfaceNoiseCutoff = 0.7;
     float murkiness = 0.9;
@@ -148,37 +153,39 @@ export const fragmentShader = `
         vec2 distortionCoords = depthCoords + totalDistortion;
         // distortionCoords = clamp(depthCoords, 0.001, 0.999);
 
-        // float sceneDepth = texture2D(uDepthMap, distortionCoords).r;
-        float sceneDepth = texture2D(uDepthMap, depthCoords).r;
+        float sceneDepth = texture2D(uDepthMap, distortionCoords).r;
         float floorDistance = toLinearDepth(sceneDepth);
         float surfaceDistance = toLinearDepth(gl_FragCoord.z);
         float waterDepth = floorDistance - surfaceDistance;
-        waterDepth = 1.0 - exp(-waterDepth * murkiness);  // Beers law for linearization. Why use this if using toLinearDepth??
+        waterDepth = 1.0 - exp(-waterDepth * murkiness);  // Beers law for murkiness
         gl_FragColor.rgb = mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
 
+        // float refraction = texture2D(uDepthMap, distortionCoords).r;
+        // float floorDistance2 = toLinearDepth(refraction);
+        // float waterDepth2 = floorDistance2 - surfaceDistance;
+        // waterDepth2 = 1.0 - exp(-waterDepth2 * murkiness);  // Beers law for murkiness
+        // gl_FragColor.rgb = mix(uWaterColorShallow, uWaterColorDeep, waterDepth2);
+
         // Soft edges & foam lines
-        float shoreDepth = 0.75;
+        float shoreDepth = 1.0;
         // vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
 
+        // TODO
+        // linear falloff
         if (waterDepth < shoreDepth) {
             float foamMovement = uTime * 0.0025;
-            float scaledUv = 4.0;
+            float scaledUv = 3.0;
             float foamTexCutoff = waterDepth / shoreDepth;
             float foamTex1 = texture2D(uNormalMap, vec2(vTexCoords.x - foamMovement, vTexCoords.y + foamMovement * 1.1) * scaledUv).r;
             float foamTex2 = texture2D(uNormalMap, vec2(vTexCoords.x + foamMovement * 1.1, vTexCoords.y - foamMovement) * scaledUv).r;
             float foamTex = foamTex1 * foamTex2;
-            
-    
-            // vec3 falloff = mix(gl_FragColor.rgb, vec3(1.0), 1.0 - waterDepth / shoreDepth);
             float falloff = mix(0.0, 1.0, 1.0 - waterDepth / shoreDepth);
-            // falloff = pow(falloff, 2.0);
-
             foamTex = foamTex < falloff / 1.5 ? 1.0 : 0.0;
-
-            falloff *= foamTex;
-            float foamEdge = clamp(waterDepth / (shoreDepth * 0.33), 0.0, 1.0);
+            falloff = pow(falloff, 2.0);
+            foamTex *= falloff;
+            float foamEdge = clamp(waterDepth / (shoreDepth * 0.25), 0.0, 1.0);
             gl_FragColor.a = foamEdge;
-            gl_FragColor.rgb += vec3(falloff);
+            gl_FragColor.rgb += vec3(foamTex);
         }
 
         // Normals
