@@ -117,10 +117,11 @@ function Hexagon(cX, cZ, index, w) {
     }
 
     this.position = new Vector3(
-        (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2),
-        simplex.octaves(cX, cZ, 6, 0.08),
-        cZ * (outerRadius * 1.5)
+        (cX + cZ * 0.5 - parseInt(cZ / 2)) * (innerRadius * 2), // hex grid horizontal offset
+        Math.round(simplex.octaves(cX, cZ, 6, 0.08)),   // height from simplex noise (makes it deterministic)
+        cZ * (outerRadius * 1.5)    // hex grid vertical offset
     );
+
     const minHeight = -3,
         maxHeight = 7,
         range = maxHeight - minHeight;

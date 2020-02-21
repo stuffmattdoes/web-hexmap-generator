@@ -36,7 +36,7 @@ function Water() {
     this.clock = new Clock();
     let h = 100,
         w = 100,
-        geometry = new PlaneBufferGeometry(w, h),
+        geometry = new PlaneBufferGeometry(w, h, 50, 50),
         textureLoader = new TextureLoader();
     
     geometry.name = 'Water';
@@ -102,15 +102,15 @@ function Water() {
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Water';
     mesh.rotateX(-90 * ThreeMath.DEG2RAD);
-    mesh.position.y = -1;
+    mesh.position.y = -1.5;
     // mesh.position.z = -4;
     // mesh.position.x = 1;
 
     // mesh.rotateX(-30 * ThreeMath.DEG2RAD);
     // mesh.position.y = 2;
 
-    const wireframe = createWireframe(geometry);
-    mesh.add(wireframe);
+    // this.wireframe = createWireframe(geometry);
+    // mesh.add(this.wireframe);
 
     this.animate();
 

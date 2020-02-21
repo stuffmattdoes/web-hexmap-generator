@@ -55,7 +55,7 @@ Simplex.prototype = {
         const e = 1 * this.simplex.noise2D(x * 1 * freq, y * 1 * freq) * amp
         + 0.5 * this.simplex.noise2D(x * 2 * freq, y * 2 * freq) * amp
         + 0.25 * this.simplex.noise2D(x * 4 * freq, y * 2 * freq) * amp;
-        
+
         return e;
         // return Math.pow(e, 0.9);
     }

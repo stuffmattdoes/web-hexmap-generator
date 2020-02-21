@@ -57,15 +57,13 @@ export const vertexShader = `
     varying vec2 vTexCoords;
     // varying vec2 vUv;
 
-    float amp = 0.1;
-    float freq = 0.1;
+    float PI = 3.1415926535897932384626433832795;
     float tiling = 0.05;
     
     void main() {
         // vNormal = normal;
         // vPos = position;
         vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) * tiling;
-        // vTexCoords.x += sin(uTime) * amp * freq;
         // vUv = uv;
 
         /*
@@ -74,8 +72,20 @@ export const vertexShader = `
         */
         // gl_ClipDistance[0] = 1;  // gl_ClipDisance undefined in Three.js ?
         vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
+        float amplitude = 0.5;
+        float wavelength = 10.0;
+        float velocity = 1.0;
+        // Gerstner waves
+        float k = 2.0 * PI / wavelength;
+		float f = k * (position.x - velocity * uTime);
+        vClipSpace.x += amplitude * cos(f);
+        vClipSpace.y += amplitude * sin(f);
+        
+        // vClipSpace.y += amplitude * sin(k * (position.x - velocity * uTime));    // Sine wave
+
+        // vClipSpace.y += sin(uTime * waveVelocity * 1.1 - position.x)
+        //     * sin(uTime * waveVelocity * 0.9 - position.y) * waveAmplitude;
         gl_Position = vClipSpace;
-        // vClipSpace = position * 2.0 - 1.0;  // screen space
     }
 `;
 
@@ -153,7 +163,7 @@ export const fragmentShader = `
         vec2 distortionCoords = depthCoords + totalDistortion;
         // distortionCoords = clamp(depthCoords, 0.001, 0.999);
 
-        float sceneDepth = texture2D(uDepthMap, distortionCoords).r;
+        float sceneDepth = texture2D(uDepthMap, depthCoords).r;
         float floorDistance = toLinearDepth(sceneDepth);
         float surfaceDistance = toLinearDepth(gl_FragCoord.z);
         float waterDepth = floorDistance - surfaceDistance;
@@ -176,7 +186,7 @@ export const fragmentShader = `
             float foamMovement = uTime * 0.0025;
             float scaledUv = 3.0;
             float foamTexCutoff = waterDepth / shoreDepth;
-            float foamTex1 = texture2D(uNormalMap, vec2(vTexCoords.x - foamMovement, vTexCoords.y + foamMovement * 1.1) * scaledUv).r;
+            float foamTex1 = texture2D(uNormalMap, vec2(vTexCoords.x - foamMovement, vTexCoords.y + foamMovement) * scaledUv).r;
             float foamTex2 = texture2D(uNormalMap, vec2(vTexCoords.x + foamMovement * 1.1, vTexCoords.y - foamMovement) * scaledUv).r;
             float foamTex = foamTex1 * foamTex2;
             float falloff = mix(0.0, 1.0, 1.0 - waterDepth / shoreDepth);
