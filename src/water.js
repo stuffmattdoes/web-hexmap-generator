@@ -1,9 +1,10 @@
 /*
     TODO:
-    - Clipping plane
-    - Reflection
-    - Refraction
-    - Subsurface light scattering
+    * [ ] Clipping plane
+    * [ ] Reflection
+    * [ ] Refraction
+    * [x] Subsurface light scattering (depth color gradient)
+    * [ ] Wave height gradient coloring
 */
 
 import {

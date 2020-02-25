@@ -255,8 +255,8 @@ function createScene() {
 	const nearPlane = 1;
 	const farPlane = 10000;
 	camera = new PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-	// camera.position.set(0, 20, 45);	// far
-	camera.position.set(0, 1, 6);	 // close
+	camera.position.set(0, 20, 45);	// far
+	// camera.position.set(0, 1, 6);	 // close
 	// camera.rotation.set(10, 10, 10);
 
 	// Interaction
@@ -289,7 +289,7 @@ function createutilities() {
 }
 
 function populateScene() {
-	hexGrid = new HexGrid(64, 64);
+	hexGrid = new HexGrid(12, 12);
 	scene.add(hexGrid);
 	water = new Water();
 	scene.add(water);

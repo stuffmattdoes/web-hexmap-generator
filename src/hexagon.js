@@ -14,7 +14,8 @@ import {
     ShapeBufferGeometry,
     TextureLoader,
     VertexColors,
-    Vector3
+    Vector3,
+    RepeatWrapping
 } from 'three';
 // import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
@@ -27,8 +28,8 @@ let outerRadius = 5,
     solidArea = 0.75,
     labels = [],
     simplex,
-    // lut = new Lut(),
-    // blendArea = 1 - solidArea,
+    textureLoader = new TextureLoader(),
+    textures = {},
     cells = [];
 
 function HexGrid(width, height) {
@@ -37,11 +38,15 @@ function HexGrid(width, height) {
     geometry.name = 'HexGrid';
     simplex = new Simplex('seed');
 
+    textures.grass =  textureLoader.load('/img/grass.jpg');
+    textures.rocks =  textureLoader.load('/img/rock.jpg');
+    textures.sand = textureLoader.load('/img/sand.jpg');
+    // [ 'grass', 'rocks', 'sand' ].forEach(type => textures[type].wrapS = textures[type].wrapT = RepeatWrapping);
+
     for (let z = 0, i = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const hexCell = new Hexagon(x, z, i, width);
             geometry.mergeMesh(hexCell.mesh);
-            // geometry.mergeVertices();
             cells.push(hexCell);
             i++;
         }
@@ -49,22 +54,23 @@ function HexGrid(width, height) {
 
     geometry.mergeVertices();
     geometry.computeFaceNormals()
-    // geometry.computeFlatVertexNormals(); // results look same as above
+    geometry.computeFlatVertexNormals(); // results look same as above
 
-    geometry.computeVertexNormals();
+    // geometry.computeVertexNormals();
     // geometry.verticesNeedUpdate = true;
+    // geometry.uvsNeedUpdate = true;
 
     // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
 
     const material = new MeshPhongMaterial({
-        vertexColors: VertexColors,
-        // map: bumpMap,
-        // bumpMap,
+        map: textures.grass,
+        // bumpMap: textures.grass,
         // bumpScale: 1,
-
+        
         // color: 0x353535,
         // specular: 0x222222,
         shininess: 0,
+        // vertexColors: VertexColors,
     });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';

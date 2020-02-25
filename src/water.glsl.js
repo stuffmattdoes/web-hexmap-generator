@@ -45,7 +45,7 @@ export const vertexShader = `
 
     Provided by Geometry & BufferGeometry:
     attribute vec3 normal;      // Direction of normal for light calculations
-    attribute vec3 position;    // Position of this vertex (world-space)
+    attribute vec3 position;    // Position of this vertex (local-space)
     attribute vec2 uv;          // Coordinates for texture mapping (normalized from 0 to 1)
     */
 
@@ -62,12 +62,12 @@ export const vertexShader = `
     
     void main() {
         // vNormal = normal;
-        // vPos = position;
+        // vPos = (modelViewMatrix * vec4(position, 1.0)).xyz;
         vTexCoords = vec2(position.x / 2.0 + 0.5, position.y / 2.0 + 0.5) * tiling;
         // vUv = uv;
 
         vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
-        float amplitude = 0.5;
+        float amplitude = 0.35;
         float wavelength = 10.0;
         float velocity = 1.0;
         // Gerstner waves
@@ -138,7 +138,7 @@ export const fragmentShader = `
         distortedTexCoords = vTexCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
         vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * distortionStrength;
 
-        // Depth
+        // Depth shading
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
@@ -181,13 +181,13 @@ export const fragmentShader = `
             gl_FragColor.a = foamEdge;
         }
 
-        // Normals
-        float specular = 0.1;
+        // NormalSurface noises
+        float lightness = 0.1;
         vec4 normalMapColor = texture2D(uNormalMap, totalDistortion);
         vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
         normal = normalize(normal);
         float surfaceNoise = normalMapColor.r > surfaceNoiseCutoff
-            ? normalMapColor.r * specular : 0.0;
+            ? normalMapColor.r * lightness : 0.0;
 
         gl_FragColor += surfaceNoise;
 
