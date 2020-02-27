@@ -11,19 +11,21 @@ import {
     MeshPhongMaterial,
     MeshStandardMaterial,
     MeshToonMaterial,
-    ShapeBufferGeometry,
-    TextureLoader,
-    VertexColors,
-    Vector3,
     RepeatWrapping,
     ShaderMaterial,
+    ShapeBufferGeometry,
+    TextureLoader,
+    UniformsLib,
+    UniformsUtils,
+    VertexColors,
+    Vector3,
     Vector2
 } from 'three';
 // import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
 // import SimplexNoise from 'simplex-noise';
 import { createWireframe, Simplex } from './util';
-import { colors } from '.';
+import { colors, scene } from '.';
 import { fragmentShader, vertexShader } from './terrain.glsl.js';
 
 let outerRadius = 5,
@@ -57,44 +59,52 @@ function HexGrid(width, height) {
 
     geometry.mergeVertices();
     geometry.computeFaceNormals();
+    calculateUvs(geometry);
     // geometry.computeFlatVertexNormals(); // results look same as above
 
-    // geometry.computeVertexNormals();
+    geometry.computeVertexNormals();
     geometry.verticesNeedUpdate = true;
     geometry.uvsNeedUpdate = true;
 
+    // console.log(geometry);
+
     // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
 
-    const material = new MeshPhongMaterial({
-        map: textures.grass,
-        // bumpMap: textures.grass,
-        // bumpScale: 1,
-        // color: 0x353535,
-        // specular: 0x222222,
-        shininess: 0,
-        // vertexColors: VertexColors,
+    // const material = new MeshPhongMaterial({
+    //     // lighting: true,
+    //     map: textures.grass,
+    //     shininess: 0,
+    //     // vertexColors: VertexColors,
+    // });
+
+    // this.uniforms = UniformsUtils.merge([
+        // UniformsLib['fog'],
+        this.uniforms = {
+            uGrassTex: { type: 't', value: textures.grass },
+            uRockTex: { type: 't', value: textures.rocks },
+            uSandTex: { type: 't', value: textures.sand },
+
+            // Fog
+            uFogColor: { value: scene.fog.color },
+            uFogFar: { value: scene.fog.far },
+            uFogNear: { value: scene.fog.near },
+        }
+    // ]);
+
+    const material = new ShaderMaterial({
+        useFog: true,
+        fragmentShader,
+        uniforms: this.uniforms,
+        vertexShader
     });
 
-    // this.uniforms = {
-    //     uGrassTex: { type: 't', value: textures.grass },
-    //     uRockTex: { type: 't', value: textures.rocks },
-    //     uSandTex: { type: 't', value: textures.sand }
-    // }
-
-    // const material = new ShaderMaterial({
-    //     fragmentShader,
-    //     // lighting: true,
-    //     // transparent: true,
-    //     uniforms: this.uniforms,
-    //     vertexShader
-    // });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
     mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
 
-    const wireframe = createWireframe(geometry);
-    mesh.add(wireframe);
+    // const wireframe = createWireframe(geometry);
+    // mesh.add(wireframe);
 
     group.position.x = -(width * innerRadius) + (innerRadius / 2);
     group.position.z = -(height * innerRadius) + (innerRadius / 2);
@@ -144,9 +154,9 @@ function Hexagon(cX, cZ, index, w) {
         cZ * (outerRadius * 1.5)    // hex grid vertical offset
     );
 
-    const minHeight = -3,
-        maxHeight = 7,
-        range = maxHeight - minHeight;
+    // const minHeight = -3,
+    //     maxHeight = 7,
+    //     range = maxHeight - minHeight;
 
     this.corners = {
 		SW: new Vector3(-innerRadius, 0, 0.5 * outerRadius).addScalar(simplex.noise2D(cX, cZ)),
@@ -165,7 +175,7 @@ function Hexagon(cX, cZ, index, w) {
     //     : this.position.y < 0.75 * range + minHeight ? colors.earth.j
     //     : '#fff'
     // );
-    const colors = [ new Color(1.0, 0.0, 0.0), new Color(0.0, 1.0, 0.0), new Color(1.0, 0.0, 1.0) ];
+    const colors = [ new Color(1.0, 0.0, 0.0), new Color(0.0, 1.0, 0.0), new Color(0.0, 0.0, 1.0) ];
     geometry.colors.push(colors[0]);
 
     // Trianglation loop
@@ -196,7 +206,6 @@ function Hexagon(cX, cZ, index, w) {
                     nextCorner = cornerKeys[i + 4] || cornerKeys[i - 2];
                 let { mesh: { geometry: { colors: neighborColors }}, position } = neighbor;
                 const diff = new Vector3().subVectors(position, this.position);
-                // const diff2 = new Vector3().subVectors(position, this.position).divideScalar(2);
                 const b1 = new Vector3(
                     diff.x + neighbor.corners[corner].x * solidArea,
                     position.y,
@@ -207,16 +216,15 @@ function Hexagon(cX, cZ, index, w) {
                     position.y,
                     diff.z + neighbor.corners[nextCorner].z * solidArea
                 );
+                geometry.vertices.push(b1);
+                geometry.vertices.push(b2);
 
                 // Using splat map colors
                 const b1Colors = [ colors[0], colors[0], colors[1] ];
                 const b2Colors = [ colors[0], colors[1], colors[1] ];
 
-                geometry.vertices.push(b1);
-                geometry.vertices.push(b2);
                 geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 3, null, b1Colors));
                 geometry.faces.push(new Face3(faceI + 1, faceI + 3, faceI + 4, null, b2Colors));
-                // geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
 
                 if (nextNeighbor && i < 2) {
                     let { mesh: { geometry: { colors: nextNeighborColors }}, position } = nextNeighbor;
@@ -227,14 +235,13 @@ function Hexagon(cX, cZ, index, w) {
                         position.y, 
                         nextDiff.z + nextNeighbor.corners[triCorner].z * solidArea
                     );
+                    geometry.vertices.push(tri);
 
                     // Using terrain colors
                     // const triColors = [ color, nextNeighborColors[0], neighborColors[0] ];
-                    
+
                     // Using splat map colors
                     const triColors = [ colors[0], colors[2], colors[1] ];
-
-                    geometry.vertices.push(tri);
                     geometry.faces.push(new Face3(faceI + 2, faceI + 5, faceI + 3, null, triColors));
 
                     faceI += 1;
@@ -247,9 +254,7 @@ function Hexagon(cX, cZ, index, w) {
         faceI += 3;
     }
 
-    console.log(geometry);
-
-    // geometry.verticesNeedUpdate = true;
+    geometry.verticesNeedUpdate = true;
     this.mesh = new Mesh(geometry);
     this.mesh.name = 'Hexagon';
     this.mesh.position.x = this.position.x;
@@ -267,6 +272,34 @@ function Hexagon(cX, cZ, index, w) {
 	return this;
 }
 
+const normalizeScalar = (scalar, min, max) => (scalar - min) / (max - min);
+const normalizeVec2 = (vec3, min, max) => new Vector2(
+    normalizeScalar(vec3.x, min.x, max.x),
+    // normalizeScalar(vec3.y, min.y, max.y),
+    normalizeScalar(vec3.z, min.z, max.z)
+);
+
+const calculateUvs = (geometry) => {
+    geometry.computeBoundingBox();
+    const { min, max } = geometry.boundingBox;
+
+    // UVs
+    geometry.faces.forEach((f, i) => {
+        const { a, b, c, color, vertexColors } = f;
+        const vertA = geometry.vertices[a];
+        const vertB = geometry.vertices[b];
+        const vertC = geometry.vertices[c];
+        const uvs = [
+            normalizeVec2(vertA, min, max),
+            normalizeVec2(vertB, min, max),
+            normalizeVec2(vertC, min, max)
+        ];
+
+        f.vertexColors = f.color = new Color(1.0, 1.0, 1.0);
+        geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
+    });
+}
+    
 function createLabel({ x: cX, z: cZ }, y) {
     const loader = new FontLoader();
 

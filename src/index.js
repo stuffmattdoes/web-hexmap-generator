@@ -289,7 +289,7 @@ function createutilities() {
 }
 
 function populateScene() {
-	hexGrid = new HexGrid(12, 12);
+	hexGrid = new HexGrid(24, 24);
 	scene.add(hexGrid);
 	water = new Water();
 	scene.add(water);
