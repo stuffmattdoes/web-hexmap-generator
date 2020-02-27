@@ -93,8 +93,8 @@ function HexGrid(width, height) {
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
     mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
 
-    // const wireframe = createWireframe(geometry);
-    // mesh.add(wireframe);
+    const wireframe = createWireframe(geometry);
+    mesh.add(wireframe);
 
     group.position.x = -(width * innerRadius) + (innerRadius / 2);
     group.position.z = -(height * innerRadius) + (innerRadius / 2);
@@ -165,19 +165,11 @@ function Hexagon(cX, cZ, index, w) {
     //     : this.position.y < 0.75 * range + minHeight ? colors.earth.j
     //     : '#fff'
     // );
-    const color = new Color(1.0, 0.0, 0.0);
-    const borderColor = new Color(0.0, 1.0, 0.0);
-    const cornerColor = new Color(0.0, 0.0, 1.0);
-    geometry.colors.push(color);
-    // const colors = [ new Color('#FF0000'), new Color('#00F00F'), new Color('#0000FF') ];
+    const colors = [ new Color(1.0, 0.0, 0.0), new Color(0.0, 1.0, 0.0), new Color(1.0, 0.0, 1.0) ];
+    geometry.colors.push(colors[0]);
 
     // Trianglation loop
     const cornersKeys = Object.keys(this.corners);
-    // const uvs = [
-    //     new Vector2(0.0, 0.0),
-    //     new Vector2(1.0, 0.0),
-    //     new Vector2(1.0, 1.0)
-    // ];
 
     for (let i = 0, faceI = 0; i < cornersKeys.length; i++) {
         const { x, z } = this.corners[cornersKeys[i]];
@@ -190,7 +182,7 @@ function Hexagon(cX, cZ, index, w) {
             new Vector3(x * solidArea, y, z * solidArea),
             new Vector3(x2 * solidArea, y, z2 * solidArea)
         );
-        geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, color));
+        geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, colors[0]));
 
         // We only need the first three bridges to prevent overlapping
         if (i < 3) {
@@ -216,21 +208,13 @@ function Hexagon(cX, cZ, index, w) {
                     diff.z + neighbor.corners[nextCorner].z * solidArea
                 );
 
-                
-                // Using terrain colors
-                // const b1Colors = [ color, color, neighborColors[0] ];
-                // const b2Colors = [ color, neighborColors[0], neighborColors[0] ];
-
                 // Using splat map colors
-                const b1Colors = [ color, color, borderColor ];
-                const b2Colors = [ color, borderColor, borderColor ];
+                const b1Colors = [ colors[0], colors[0], colors[1] ];
+                const b2Colors = [ colors[0], colors[1], colors[1] ];
 
                 geometry.vertices.push(b1);
                 geometry.vertices.push(b2);
                 geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 3, null, b1Colors));
-                // geometry.faceVertexUvs[0].push([
-                //     new Vector2(b1.x, b1.z)
-                // ]);
                 geometry.faces.push(new Face3(faceI + 1, faceI + 3, faceI + 4, null, b2Colors));
                 // geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
 
@@ -248,11 +232,10 @@ function Hexagon(cX, cZ, index, w) {
                     // const triColors = [ color, nextNeighborColors[0], neighborColors[0] ];
                     
                     // Using splat map colors
-                    const triColors = [ color, cornerColor, borderColor ];
+                    const triColors = [ colors[0], colors[2], colors[1] ];
 
                     geometry.vertices.push(tri);
                     geometry.faces.push(new Face3(faceI + 2, faceI + 5, faceI + 3, null, triColors));
-                    // geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
 
                     faceI += 1;
                 }
@@ -263,6 +246,8 @@ function Hexagon(cX, cZ, index, w) {
 
         faceI += 3;
     }
+
+    console.log(geometry);
 
     // geometry.verticesNeedUpdate = true;
     this.mesh = new Mesh(geometry);
