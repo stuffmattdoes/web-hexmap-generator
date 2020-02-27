@@ -67,14 +67,14 @@ export const vertexShader = `
         // vUv = uv;
 
         vClipSpace = projectionMatrix * modelViewMatrix * vec4(position, 1.0);  // Represents clip-space coords, or -1 to 1
-        float amplitude = 0.35;
+        float amplitude = 0.9;
         float wavelength = 10.0;
         float velocity = 1.0;
         // Gerstner waves
         float k = 2.0 * PI / wavelength;
 		float f = k * (position.x - velocity * uTime);
         vClipSpace.x += amplitude * cos(f);
-        vClipSpace.y += amplitude * sin(f);        
+        vClipSpace.y -= amplitude * sin(f);
         // vClipSpace.y += amplitude * sin(k * (position.x - velocity * uTime));    // Sine wave
 
         // vClipSpace.y += sin(uTime * waveVelocity * 1.1 - position.x)

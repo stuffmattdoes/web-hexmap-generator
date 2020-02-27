@@ -15,13 +15,16 @@ import {
     TextureLoader,
     VertexColors,
     Vector3,
-    RepeatWrapping
+    RepeatWrapping,
+    ShaderMaterial,
+    Vector2
 } from 'three';
 // import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise.js';
 // import { Lut } from 'three/examples/jsm/math/Lut.js';
 // import SimplexNoise from 'simplex-noise';
 import { createWireframe, Simplex } from './util';
 import { colors } from '.';
+import { fragmentShader, vertexShader } from './terrain.glsl.js';
 
 let outerRadius = 5,
     innerRadius = outerRadius * 0.866025404,
@@ -41,7 +44,7 @@ function HexGrid(width, height) {
     textures.grass =  textureLoader.load('/img/grass.jpg');
     textures.rocks =  textureLoader.load('/img/rock.jpg');
     textures.sand = textureLoader.load('/img/sand.jpg');
-    // [ 'grass', 'rocks', 'sand' ].forEach(type => textures[type].wrapS = textures[type].wrapT = RepeatWrapping);
+    [ 'grass', 'rocks', 'sand' ].forEach(type => textures[type].wrapS = textures[type].wrapT = RepeatWrapping);
 
     for (let z = 0, i = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
@@ -53,12 +56,12 @@ function HexGrid(width, height) {
     }
 
     geometry.mergeVertices();
-    geometry.computeFaceNormals()
-    geometry.computeFlatVertexNormals(); // results look same as above
+    geometry.computeFaceNormals();
+    // geometry.computeFlatVertexNormals(); // results look same as above
 
     // geometry.computeVertexNormals();
-    // geometry.verticesNeedUpdate = true;
-    // geometry.uvsNeedUpdate = true;
+    geometry.verticesNeedUpdate = true;
+    geometry.uvsNeedUpdate = true;
 
     // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
 
@@ -66,12 +69,25 @@ function HexGrid(width, height) {
         map: textures.grass,
         // bumpMap: textures.grass,
         // bumpScale: 1,
-        
         // color: 0x353535,
         // specular: 0x222222,
         shininess: 0,
         // vertexColors: VertexColors,
     });
+
+    // this.uniforms = {
+    //     uGrassTex: { type: 't', value: textures.grass },
+    //     uRockTex: { type: 't', value: textures.rocks },
+    //     uSandTex: { type: 't', value: textures.sand }
+    // }
+
+    // const material = new ShaderMaterial({
+    //     fragmentShader,
+    //     // lighting: true,
+    //     // transparent: true,
+    //     uniforms: this.uniforms,
+    //     vertexShader
+    // });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
@@ -141,19 +157,27 @@ function Hexagon(cX, cZ, index, w) {
         S: new Vector3(0, 0, outerRadius).addScalar(simplex.noise2D(cX + 5, cX + 5)),
     };
     const geometry = new Geometry();
-    const color = new Color(
-        this.position.y < 0 * range + minHeight ? colors.earth.b
-        : this.position.y < 0.15 * range + minHeight ? colors.earth.f
-        : this.position.y < 0.3 * range + minHeight ? colors.earth.i
-        : this.position.y < 0.45 * range + minHeight ? colors.earth.k
-        : this.position.y < 0.75 * range + minHeight ? colors.earth.j
-        : '#fff'
-    );
+    // const color = new Color(
+    //     this.position.y < 0 * range + minHeight ? colors.earth.b
+    //     : this.position.y < 0.15 * range + minHeight ? colors.earth.f
+    //     : this.position.y < 0.3 * range + minHeight ? colors.earth.i
+    //     : this.position.y < 0.45 * range + minHeight ? colors.earth.k
+    //     : this.position.y < 0.75 * range + minHeight ? colors.earth.j
+    //     : '#fff'
+    // );
+    const color = new Color(1.0, 0.0, 0.0);
+    const borderColor = new Color(0.0, 1.0, 0.0);
+    const cornerColor = new Color(0.0, 0.0, 1.0);
     geometry.colors.push(color);
     // const colors = [ new Color('#FF0000'), new Color('#00F00F'), new Color('#0000FF') ];
 
     // Trianglation loop
     const cornersKeys = Object.keys(this.corners);
+    // const uvs = [
+    //     new Vector2(0.0, 0.0),
+    //     new Vector2(1.0, 0.0),
+    //     new Vector2(1.0, 1.0)
+    // ];
 
     for (let i = 0, faceI = 0; i < cornersKeys.length; i++) {
         const { x, z } = this.corners[cornersKeys[i]];
@@ -161,9 +185,11 @@ function Hexagon(cX, cZ, index, w) {
         const { x: x2, z: z2 } = this.corners[cornersKeys[i + 1]] || this.corners[cornersKeys[0]];
 
         // main
-        geometry.vertices.push(new Vector3(0, this.position.y, 0));
-        geometry.vertices.push(new Vector3(x * solidArea, y, z * solidArea));
-        geometry.vertices.push(new Vector3(x2 * solidArea, y, z2 * solidArea));
+        geometry.vertices.push(
+            new Vector3(0, this.position.y, 0),
+            new Vector3(x * solidArea, y, z * solidArea),
+            new Vector3(x2 * solidArea, y, z2 * solidArea)
+        );
         geometry.faces.push(new Face3(0, faceI + 2, faceI + 1, null, color));
 
         // We only need the first three bridges to prevent overlapping
@@ -189,15 +215,24 @@ function Hexagon(cX, cZ, index, w) {
                     position.y,
                     diff.z + neighbor.corners[nextCorner].z * solidArea
                 );
-                // const b3 = new Vector3().addVectors(neighbor.corners[corner], this.corners[corner]).divideScalar(2);
-                // const b4 = new Vector3().addVectors(neighbor.corners[nextCorner], this.corners[nextCorner]).divideScalar(2);
-                const b1Colors = [ color, color, neighborColors[0] ];
-                const b2Colors = [ color, neighborColors[0], neighborColors[0] ];
+
+                
+                // Using terrain colors
+                // const b1Colors = [ color, color, neighborColors[0] ];
+                // const b2Colors = [ color, neighborColors[0], neighborColors[0] ];
+
+                // Using splat map colors
+                const b1Colors = [ color, color, borderColor ];
+                const b2Colors = [ color, borderColor, borderColor ];
 
                 geometry.vertices.push(b1);
                 geometry.vertices.push(b2);
                 geometry.faces.push(new Face3(faceI + 1, faceI + 2, faceI + 3, null, b1Colors));
+                // geometry.faceVertexUvs[0].push([
+                //     new Vector2(b1.x, b1.z)
+                // ]);
                 geometry.faces.push(new Face3(faceI + 1, faceI + 3, faceI + 4, null, b2Colors));
+                // geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
 
                 if (nextNeighbor && i < 2) {
                     let { mesh: { geometry: { colors: nextNeighborColors }}, position } = nextNeighbor;
@@ -208,9 +243,16 @@ function Hexagon(cX, cZ, index, w) {
                         position.y, 
                         nextDiff.z + nextNeighbor.corners[triCorner].z * solidArea
                     );
-                    const triColors = [ color, nextNeighborColors[0], neighborColors[0] ];
+
+                    // Using terrain colors
+                    // const triColors = [ color, nextNeighborColors[0], neighborColors[0] ];
+                    
+                    // Using splat map colors
+                    const triColors = [ color, cornerColor, borderColor ];
+
                     geometry.vertices.push(tri);
                     geometry.faces.push(new Face3(faceI + 2, faceI + 5, faceI + 3, null, triColors));
+                    // geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
 
                     faceI += 1;
                 }
@@ -222,7 +264,8 @@ function Hexagon(cX, cZ, index, w) {
         faceI += 3;
     }
 
-    this.mesh = new Mesh(geometry, new MeshPhongMaterial());
+    // geometry.verticesNeedUpdate = true;
+    this.mesh = new Mesh(geometry);
     this.mesh.name = 'Hexagon';
     this.mesh.position.x = this.position.x;
     // hexagon.position.y = Math.floor(Math.random() * 10);
