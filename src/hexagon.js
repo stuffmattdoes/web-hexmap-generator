@@ -39,7 +39,7 @@ let outerRadius = 5,
 
 function HexGrid(width, height) {
     const geometry = new Geometry();
-    const group = new Group();
+    // const group = new Group();
     geometry.name = 'HexGrid';
     simplex = new Simplex('seed');
 
@@ -70,16 +70,17 @@ function HexGrid(width, height) {
 
     // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
 
-    // const material = new MeshPhongMaterial({
-    //     // lighting: true,
-    //     map: textures.grass,
-    //     shininess: 0,
-    //     // vertexColors: VertexColors,
-    // });
+    const material = new MeshPhongMaterial({
+        // lighting: true,
+        // map: textures.grass,
+        shininess: 0,
+        vertexColors: VertexColors,
+    });
 
-    // this.uniforms = UniformsUtils.merge([
-        // UniformsLib['fog'],
-        this.uniforms = {
+    this.uniforms = 
+        // UniformsUtils.merge([
+        // UniformsLib['lights'],
+        {
             uGrassTex: { type: 't', value: textures.grass },
             uRockTex: { type: 't', value: textures.rocks },
             uSandTex: { type: 't', value: textures.sand },
@@ -88,16 +89,25 @@ function HexGrid(width, height) {
             uFogColor: { value: scene.fog.color },
             uFogFar: { value: scene.fog.far },
             uFogNear: { value: scene.fog.near },
+
+            // Straight from UniformsLib['fog']
+            // fogDensity: { value: 0.00025 },
+		    // fogNear: { value: scene.fog.near },
+		    // fogFar: { value: scene.fog.far },
+		    // fogColor: { value: scene.fog.color }
         }
     // ]);
 
-    const material = new ShaderMaterial({
-        useFog: true,
-        fragmentShader,
-        uniforms: this.uniforms,
-        vertexShader
-    });
+    // const material = new ShaderMaterial({
+    //     // fog: true,
+    //     // useFog: true,
+    //     // USE_FOG: true,
+    //     fragmentShader,
+    //     uniforms: this.uniforms,
+    //     vertexShader
+    // });
 
+    console.log(geometry, material);
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
@@ -106,9 +116,9 @@ function HexGrid(width, height) {
     // const wireframe = createWireframe(geometry);
     // mesh.add(wireframe);
 
-    group.position.x = -(width * innerRadius) + (innerRadius / 2);
-    group.position.z = -(height * innerRadius) + (innerRadius / 2);
-    group.add(...cells.map(c => c.mesh));
+    // group.position.x = -(width * innerRadius) + (innerRadius / 2);
+    // group.position.z = -(height * innerRadius) + (innerRadius / 2);
+    // group.add(...cells.map(c => c.mesh));
 
     // return group;
     return mesh;
@@ -131,7 +141,7 @@ function Hexagon(cX, cZ, index, w) {
     if (cX > 0) {
         neighbors.W = cells[index - 1];
     }
-    
+
     if (cZ > 0) {
         if (cZ % 2 === 1) {
             neighbors.NW = cells[index - w];
@@ -260,12 +270,6 @@ function Hexagon(cX, cZ, index, w) {
     this.mesh.position.x = this.position.x;
     // hexagon.position.y = Math.floor(Math.random() * 10);
     this.mesh.position.z = this.position.z;
-
-    // const sprite = new Sprite(new SpriteMaterial({
-    //     map: new CanvasTexture(lut.createCanvas())
-    // }));
-    // sprite.scale.x = 0.125;
-    // this.mesh.add(sprite);
     
     // createLabel(this.coordinates, this.position.y).then(text => this.mesh.add(text));
 
