@@ -289,9 +289,9 @@ function createutilities() {
 }
 
 function populateScene() {
-	hexGrid = new HexGrid(24, 24);
+	hexGrid = new HexGrid(48, 48);
 	scene.add(hexGrid);
-	water = new Water();
+	water = new Water(300, 300);
 	scene.add(water);
 }
 

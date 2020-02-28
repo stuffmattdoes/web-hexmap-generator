@@ -33,11 +33,9 @@ import { createWireframe } from './util';
 import { camera, colors, depthTarget, scene } from '.';
 import { fragmentShader, vertexShader } from './water.glsl.js';
 
-function Water() {
+function Water(w, h) {
     this.clock = new Clock();
-    let h = 100,
-        w = 100,
-        geometry = new PlaneBufferGeometry(w, h, 50, 50),
+    let geometry = new PlaneBufferGeometry(w, h, w, h),
         textureLoader = new TextureLoader();
 
     geometry.name = 'Water';

@@ -39,11 +39,11 @@ export const fragmentShader = `
         // #include <lights_phong_fragment>
         gl_FragColor = vec4(1.0);
 
-        vec3 grass = texture2D(uGrassTex, vUv).rgb * vColor.r;
-        vec3 rock = texture2D(uRockTex, vUv).rgb * vColor.g;
-        vec3 sand = texture2D(uSandTex, vUv).rgb * vColor.b;
+        vec3 sand = texture2D(uSandTex, vUv).rgb * vColor.r;
+        vec3 grass = texture2D(uGrassTex, vUv).rgb * vColor.g;
+        vec3 rock = texture2D(uRockTex, vUv).rgb * vColor.b;
         gl_FragColor.rgb = grass + rock + sand;
-        
+
         // #include <fog_fragment>
 
         // Fog
