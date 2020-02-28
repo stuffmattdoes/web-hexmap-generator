@@ -70,12 +70,12 @@ function HexGrid(width, height) {
 
     // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
 
-    const material = new MeshPhongMaterial({
-        // lighting: true,
-        // map: textures.grass,
-        shininess: 0,
-        vertexColors: VertexColors,
-    });
+    // const material = new MeshPhongMaterial({
+    //     // lighting: true,
+    //     // map: textures.grass,
+    //     shininess: 0,
+    //     vertexColors: VertexColors,
+    // });
 
     this.uniforms = 
         // UniformsUtils.merge([
@@ -90,6 +90,8 @@ function HexGrid(width, height) {
             uFogFar: { value: scene.fog.far },
             uFogNear: { value: scene.fog.near },
 
+            uTiling: { value: { x: width / 2.0, y: height / 2.0 }}
+
             // Straight from UniformsLib['fog']
             // fogDensity: { value: 0.00025 },
 		    // fogNear: { value: scene.fog.near },
@@ -98,16 +100,18 @@ function HexGrid(width, height) {
         }
     // ]);
 
-    // const material = new ShaderMaterial({
-    //     // fog: true,
-    //     // useFog: true,
-    //     // USE_FOG: true,
-    //     fragmentShader,
-    //     uniforms: this.uniforms,
-    //     vertexShader
-    // });
+    const material = new ShaderMaterial({
+        // fog: true,
+        // useFog: true,
+        // USE_FOG: true,
+        // color: true,
+        // useColor: true,
+        // USE_COLOR: true,
+        fragmentShader,
+        uniforms: this.uniforms,
+        vertexShader
+    });
 
-    console.log(geometry, material);
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Hexagon';
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
@@ -279,7 +283,6 @@ function Hexagon(cX, cZ, index, w) {
 const normalizeScalar = (scalar, min, max) => (scalar - min) / (max - min);
 const normalizeVec2 = (vec3, min, max) => new Vector2(
     normalizeScalar(vec3.x, min.x, max.x),
-    // normalizeScalar(vec3.y, min.y, max.y),
     normalizeScalar(vec3.z, min.z, max.z)
 );
 
@@ -299,7 +302,7 @@ const calculateUvs = (geometry) => {
             normalizeVec2(vertC, min, max)
         ];
 
-        f.vertexColors = f.color = new Color(1.0, 1.0, 1.0);
+        // f.vertexColors = f.color = new Color(1.0, 1.0, 1.0);
         geometry.faceVertexUvs[0].push([ uvs[0], uvs[1], uvs[2] ]);
     });
 }
