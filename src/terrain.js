@@ -37,10 +37,10 @@ let outerRadius = 5,
     textures = {},
     cells = [];
 
-function HexGrid(width, height) {
+function Terrain(width, height) {
     const geometry = new Geometry();
     // const group = new Group();
-    geometry.name = 'HexGrid';
+    geometry.name = 'Terrain';
     simplex = new Simplex('seed');
 
     textures.grass =  textureLoader.load('/img/grass.jpg');
@@ -90,7 +90,7 @@ function HexGrid(width, height) {
             uFogFar: { value: scene.fog.far },
             uFogNear: { value: scene.fog.near },
 
-            uTiling: { value: { x: width / 2.0, y: height / 2.0 }}
+            uTiling: { value: { x: width * 0.5, y: height * 0.5 }}
 
             // Straight from UniformsLib['fog']
             // fogDensity: { value: 0.00025 },
@@ -333,4 +333,4 @@ function createLabel({ x: cX, z: cZ }, y) {
     });
 }
 
-export default HexGrid;
+export default Terrain;

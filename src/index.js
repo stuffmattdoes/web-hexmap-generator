@@ -39,7 +39,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 // import { Water } from 'three/examples/jsm/objects/Water2.js';
 
 // Game Objects
-import HexGrid from './hexagon';
+import Terrain from './terrain';
 import Water from './water';
 import { skyVertex, skyFrag } from './sky.glsl.js';
 
@@ -89,7 +89,7 @@ let HEIGHT = window.innerHeight,
 	scene,
 	stats;
 
-let hexGrid,
+let terrain,
 	intersects,
 	intersected,
 	childUpdates = [],
@@ -289,8 +289,8 @@ function createutilities() {
 }
 
 function populateScene() {
-	hexGrid = new HexGrid(48, 48);
-	scene.add(hexGrid);
+	terrain = new Terrain(48, 48);
+	scene.add(terrain);
 	water = new Water(300, 300);
 	scene.add(water);
 }
@@ -314,7 +314,7 @@ function onWindowResize() {
 
 function update() {
 	// raycaster.setFromCamera(mouse, camera);
-	// intersects = raycaster.intersectObjects(hexGrid.children);
+	// intersects = raycaster.intersectObjects(Terrain.children);
 
 	// if (intersects.length > 0 ) {
 	// 	if (intersected != intersects[0]) {
