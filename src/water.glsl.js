@@ -139,13 +139,14 @@ export const fragmentShader = `
         distortedTexCoords = vTexCoords + vec2(distortedTexCoords.x, distortedTexCoords.y + moveFactor);
         vec2 totalDistortion = toClipSpace(texture2D(uDistortionMap, distortedTexCoords).rg) * distortionStrength;
 
-        // Depth shading
         // Convert clip space coords (from -1 to 1) into normalized device coords ("NDC", from  0 to 1)
         vec2 ndc = vClipSpace.xy / vClipSpace.w / 2.0 + 0.5;
         vec2 depthCoords = vec2(ndc.x, ndc.y);
         vec2 distortionCoords = depthCoords + totalDistortion;
         // distortionCoords = clamp(depthCoords, 0.001, 0.999);
-
+        
+        // Depth shading
+        // TODO: attempted drawing at destination texture, results in warning
         float sceneDepth = texture2D(uDepthMap, depthCoords).r;
         float floorDistance = toLinearDepth(sceneDepth);
         float surfaceDistance = toLinearDepth(gl_FragCoord.z);
@@ -154,6 +155,7 @@ export const fragmentShader = `
         waterDepth = 1.0 - exp(-waterDepth * murkiness);  // Beers law for murkiness
         gl_FragColor.rgb = mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
 
+        // Refraction
         // float refraction = texture2D(uDepthMap, distortionCoords).r;
         // float floorDistance2 = toLinearDepth(refraction);
         // float waterDepth2 = floorDistance2 - surfaceDistance;

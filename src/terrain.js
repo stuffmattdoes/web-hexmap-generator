@@ -60,9 +60,9 @@ function Terrain(width, height) {
     geometry.mergeVertices();
     geometry.computeFaceNormals();
     calculateUvs(geometry);
-    // geometry.computeFlatVertexNormals(); // results look same as above
+    geometry.computeFlatVertexNormals(); // results look same as above
 
-    geometry.computeVertexNormals();
+    // geometry.computeVertexNormals();
     geometry.verticesNeedUpdate = true;
     geometry.uvsNeedUpdate = true;
 
