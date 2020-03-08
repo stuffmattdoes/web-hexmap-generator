@@ -144,6 +144,9 @@ export const fragmentShader = `
         vec2 depthCoords = vec2(ndc.x, ndc.y);
         vec2 distortionCoords = depthCoords + totalDistortion;
         // distortionCoords = clamp(depthCoords, 0.001, 0.999);
+
+        // vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
+        // gl_FragColor.rgb *= mix(gl_FragColor.rgb, diffuse.rgb, 0.5);
         
         // Depth shading
         // TODO: attempted drawing at destination texture, results in warning
@@ -153,7 +156,7 @@ export const fragmentShader = `
         float waterDepth = floorDistance - surfaceDistance;
         float murkiness = 0.7;
         waterDepth = 1.0 - exp(-waterDepth * murkiness);  // Beers law for murkiness
-        gl_FragColor.rgb = mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
+        gl_FragColor.rgb *= mix(uWaterColorShallow, uWaterColorDeep, waterDepth);
 
         // Refraction
         // float refraction = texture2D(uDepthMap, distortionCoords).r;
@@ -164,7 +167,6 @@ export const fragmentShader = `
 
         // Soft edges & foam lines
         float shoreDepth = 1.0;
-        vec4 diffuse = texture2D(uDiffuseMap, depthCoords);
 
         if (waterDepth < shoreDepth) {
             float foamMovement = uTime * 0.0025;

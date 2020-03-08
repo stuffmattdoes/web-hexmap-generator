@@ -1,3 +1,13 @@
+/*
+    TODO:
+    * [x] Noise-based height displacement
+    * [x] Multi-texture mapping
+    * [x] Tri-planar mapping
+    * [ ] Lighting
+    * [ ] Height-based terrain with displacement
+    * [ ] World wrapping
+*/
+
 import {
     // BufferGeometry,
     Color,
@@ -77,6 +87,10 @@ function Terrain(width, height) {
     //     vertexColors: VertexColors,
     // });
 
+    const distortionTexture = textureLoader.load('/img/displacement.png');
+    distortionTexture.wrapS = RepeatWrapping;
+    distortionTexture.wrapT = RepeatWrapping;
+
     this.uniforms = 
         // UniformsUtils.merge([
         // UniformsLib['lights'],
@@ -90,6 +104,7 @@ function Terrain(width, height) {
             uFogFar: { value: scene.fog.far },
             uFogNear: { value: scene.fog.near },
 
+            uDistortionMap: { value: distortionTexture },
             uTiling: { value: { x: width * 0.5, y: height * 0.5 }}
 
             // Straight from UniformsLib['fog']

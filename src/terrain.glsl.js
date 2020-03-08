@@ -28,6 +28,7 @@ export const fragmentShader = `
     varying vec3 vPos;
     varying vec2 vUv;
 
+    uniform sampler2D uDistortionMap;
     uniform sampler2D uGrassTex;
     uniform sampler2D uSandTex;
     uniform sampler2D uRockTex;
@@ -51,8 +52,10 @@ export const fragmentShader = `
     void main() {
         // #include <lights_phong_fragment>
         gl_FragColor = vec4(1.0);
+        // gl_FragColor.rgb = vColor;
+        // gl_FragColor = vec4(vNormal, 1.0);
 
-        // in wNorm is the world-space normal of the fragment
+        // wNormal is the world-space normal of the fragment
         vec3 blending = abs(vNormal);
         // blending = normalize(max(blending, 0.00001)); // Force weights to sum to 1.0
         blending /= (blending.x + blending.y + blending.z);
@@ -61,12 +64,19 @@ export const fragmentShader = `
         vec3 sand = getTriPlanarFrag(uSandTex, blending) * vColor.r;
         vec3 grass = getTriPlanarFrag(uGrassTex, blending) * vColor.g;
         vec3 rock = getTriPlanarFrag(uRockTex, blending) * vColor.b;
+        gl_FragColor.rgb = (sand + grass + rock);
 
-        // vec3 sand = texture2D(uSandTex, vUv).rgb * vColor.r;
-        // vec3 grass = texture2D(uGrassTex, vUv).rgb * vColor.g;
-        // vec3 rock = texture2D(uRockTex, vUv).rgb * vColor.b;
-        gl_FragColor.rgb = sand + grass + rock;
-        // gl_FragColor = vec4(vNormal, 1.0);
+        // vec3 transition = vColor.rgb;
+        // float cutoff = texture2D(uDistortionMap, vUv).r;
+
+        // vec3 sand = texture2D(uSandTex, vUv).rgb * transition.r;
+        // vec3 grass = texture2D(uGrassTex, vUv).rgb * transition.g;
+        // vec3 rock = texture2D(uRockTex, vUv).rgb * transition.b;
+        // gl_FragColor.rgb = (sand + grass + rock);
+
+        // vec3 sand = texture2D(uSandTex, vUv).rgb * transition.r;
+        // vec3 grass = texture2D(uGrassTex, vUv).rgb * transition.g;
+        // vec3 rock = texture2D(uRockTex, vUv).rgb * transition.b;
 
         // #include <fog_fragment>
 

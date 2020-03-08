@@ -5,6 +5,7 @@
     * [ ] Refraction
     * [x] Subsurface light scattering (depth color gradient)
     * [ ] Wave height gradient coloring
+    * [ ] Diffuse texture blend for sea floor
 */
 
 import {
