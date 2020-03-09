@@ -22,6 +22,8 @@ import {
     MeshStandardMaterial,
     MeshToonMaterial,
     RepeatWrapping,
+    ShaderChunk,
+    ShaderLib,
     ShaderMaterial,
     ShapeBufferGeometry,
     TextureLoader,
@@ -87,33 +89,44 @@ function Terrain(width, height) {
     //     vertexColors: VertexColors,
     // });
 
-    const distortionTexture = textureLoader.load('/img/displacement.png');
-    distortionTexture.wrapS = RepeatWrapping;
-    distortionTexture.wrapT = RepeatWrapping;
+    // const distortionTexture = textureLoader.load('/img/displacement.png');
+    // distortionTexture.wrapS = RepeatWrapping;
+    // distortionTexture.wrapT = RepeatWrapping;
 
-    this.uniforms = 
-        // UniformsUtils.merge([
-        // UniformsLib['lights'],
+    this.uniforms =
+        /*
+            Requires you to merge data structure FIRST,
+            then assign values after.
+
+            i.e.
+            const uniforms = UniformsUtils.merge([ ... ]);
+            uniforms['uSomeUniformVar'] = 'SomeUniformValue'
+        */
+        UniformsUtils.merge([   
+        UniformsLib['lights'],
         {
-            uGrassTex: { type: 't', value: textures.grass },
-            uRockTex: { type: 't', value: textures.rocks },
-            uSandTex: { type: 't', value: textures.sand },
+            // ...UniformsLib['lights'],
+            // lights: true,
+            // diffuse: { type: 'c', value: new Color(0x0000ff)},
+            // uGrassTex: { type: 't', value: textures.grass },
+            // uRockTex: { type: 't', value: textures.rocks },
+            // uSandTex: { type: 't', value: textures.sand },
 
             // Fog
             uFogColor: { value: scene.fog.color },
             uFogFar: { value: scene.fog.far },
             uFogNear: { value: scene.fog.near },
 
-            uDistortionMap: { value: distortionTexture },
+            // uDistortionMap: { value: distortionTexture },
             uTiling: { value: { x: width * 0.5, y: height * 0.5 }}
-
-            // Straight from UniformsLib['fog']
-            // fogDensity: { value: 0.00025 },
-		    // fogNear: { value: scene.fog.near },
-		    // fogFar: { value: scene.fog.far },
-		    // fogColor: { value: scene.fog.color }
         }
-    // ]);
+    ]);
+
+    this.uniforms['uGrassTex'] = { type: 't', value: textures.grass },
+    this.uniforms['uRockTex'] = { type: 't', value: textures.rocks },
+    this.uniforms['uSandTex'] = { type: 't', value: textures.sand },
+
+    console.log(this.uniforms, scene);
 
     const material = new ShaderMaterial({
         // fog: true,
@@ -122,13 +135,14 @@ function Terrain(width, height) {
         // color: true,
         // useColor: true,
         // USE_COLOR: true,
+        lights: true,
         fragmentShader,
         uniforms: this.uniforms,
         vertexShader
     });
 
     const mesh = new Mesh(geometry, material);
-    mesh.name = 'Hexagon';
+    mesh.name = 'Terrain';
     mesh.position.x = -(width * innerRadius) + (innerRadius / 2);
     mesh.position.z = -(height * innerRadius) + (innerRadius / 2);
 
@@ -199,7 +213,7 @@ function Hexagon(cX, cZ, index, w) {
     const minHeight = -3,
         maxHeight = 7,
         range = maxHeight - minHeight;
-    const colors = [ new Color(1.0, 0.0, 0.0), new Color(0.0, 1.0, 0.0), new Color(0.0, 0.0, 1.0) ];
+    // const colors = [ new Color(1.0, 0.0, 0.0), new Color(0.0, 1.0, 0.0), new Color(0.0, 0.0, 1.0) ];
     const color = this.position.y < 0.3 * range + minHeight ? new Color(1.0, 0.0, 0.0)
         : this.position.y < 0.65 * range + minHeight ? new Color(0.0, 1.0, 0.0)
         : new Color(0.0, 0.0, 1.0);
@@ -279,7 +293,7 @@ function Hexagon(cX, cZ, index, w) {
 
     geometry.verticesNeedUpdate = true;
     this.mesh = new Mesh(geometry);
-    this.mesh.name = 'Hexagon';
+    this.mesh.name = 'Terrain Tile';
     this.mesh.position.x = this.position.x;
     // hexagon.position.y = Math.floor(Math.random() * 10);
     this.mesh.position.z = this.position.z;

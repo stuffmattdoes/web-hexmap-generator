@@ -34,7 +34,7 @@ import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import { WEBGL } from 'three/examples/jsm/webGL';
-import { Sky } from 'three/examples/jsm/objects/Sky.js';
+// import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 // import { Water } from 'three/examples/jsm/objects/Water2.js';
 
@@ -107,9 +107,11 @@ function createControls() {
 
 function createLighting() {
 	const ambientLight = new AmbientLight('#ca80ff', 0.5);
+	ambientLight.name = 'Ambient Light';
 	scene.add(ambientLight);
 
 	hemisphereLight = new HemisphereLight(colors.sky, colors.ground, 0.2);
+	hemisphereLight.name = 'Hemisphere Light';
 	// hemisphereLight.color.setHSL(0.6, 1, 0.6);
 	// hemisphereLight.groundColor.setHSL(0.1, 1, 0.75);
 	hemisphereLight.position.set(0, 25, 0);
@@ -118,7 +120,8 @@ function createLighting() {
 	const hemiLightHelper = new HemisphereLightHelper(hemisphereLight, 10);
 	scene.add(hemiLightHelper);
 
-	const dirLight = new DirectionalLight(0xffffff, 0.65);;
+	const dirLight = new DirectionalLight(0xffffff, 0.65);
+	dirLight.name = 'Directional Light';
 	dirLight.position.set(-1, 1.75, 1);
 	dirLight.position.multiplyScalar(30);
 	scene.add(dirLight);
@@ -226,10 +229,12 @@ function createEnvironment() {
 	});
 
 	const sky = new Mesh(skyGeo, skyMat);
+	sky.name = 'Sky';
 	scene.add(sky);
 
 	// Fog
 	scene.fog = new Fog(colors.horizon, 100, 200);
+	scene.fog.name = 'Fog';
 	// scene.fog.color.copy(uniforms['bottomColor'].value);
 
 	// Ground
@@ -247,6 +252,7 @@ function createEnvironment() {
 function createScene() {
 	// Scene
 	scene = new Scene();
+	scene.name = 'Main';
 	scene.background = new Color('#ccc');
 
 	// Camera
@@ -270,7 +276,7 @@ function createScene() {
 		// localClippingEnabled: true
 	});
 
-	renderer.localClippingEnabled = true;
+	renderer.localClippingEnabled = true;	// For clipping planes
 
 	renderer.setSize(WIDTH, HEIGHT);
 	// renderer.shadowMap.enabled = true;

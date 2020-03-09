@@ -7,12 +7,8 @@ export const vertexShader = `
     varying vec2 vUv;
 
     uniform vec2 uTiling;
-    // #include <common>
-    // #include <fog_pars_vertex>
 
     void main() {
-        // #include <common>
-        // #include <fog_vertex>
         vColor = color;
         vNormal = normal;
         // vPos = (position + 2.0) * 0.1;
@@ -28,7 +24,9 @@ export const fragmentShader = `
     varying vec3 vPos;
     varying vec2 vUv;
 
-    uniform sampler2D uDistortionMap;
+    uniform vec3 ambientLightColor;
+
+    // uniform sampler2D uDistortionMap;
     uniform sampler2D uGrassTex;
     uniform sampler2D uSandTex;
     uniform sampler2D uRockTex;
@@ -37,8 +35,6 @@ export const fragmentShader = `
     uniform float uFogFar;
     uniform float uFogNear;
 
-    // #include <common>
-    // #include <fog_pars_fragment>
     // #include <lights_phong_pars_fragment>
 
     vec3 getTriPlanarFrag(sampler2D texture, vec3 blending) {
@@ -66,19 +62,8 @@ export const fragmentShader = `
         vec3 rock = getTriPlanarFrag(uRockTex, blending) * vColor.b;
         gl_FragColor.rgb = (sand + grass + rock);
 
-        // vec3 transition = vColor.rgb;
-        // float cutoff = texture2D(uDistortionMap, vUv).r;
-
-        // vec3 sand = texture2D(uSandTex, vUv).rgb * transition.r;
-        // vec3 grass = texture2D(uGrassTex, vUv).rgb * transition.g;
-        // vec3 rock = texture2D(uRockTex, vUv).rgb * transition.b;
-        // gl_FragColor.rgb = (sand + grass + rock);
-
-        // vec3 sand = texture2D(uSandTex, vUv).rgb * transition.r;
-        // vec3 grass = texture2D(uGrassTex, vUv).rgb * transition.g;
-        // vec3 rock = texture2D(uRockTex, vUv).rgb * transition.b;
-
-        // #include <fog_fragment>
+        // Lighting
+        gl_FragColor.rgb *= ambientLightColor;
 
         // Fog
         float fogDepth = gl_FragCoord.z / gl_FragCoord.w;
