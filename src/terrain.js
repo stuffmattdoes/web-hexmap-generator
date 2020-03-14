@@ -78,39 +78,23 @@ function Terrain(width, height) {
     geometry.verticesNeedUpdate = true;
     geometry.uvsNeedUpdate = true;
 
-    // console.log(geometry);
-
-    // const bumpMap = new TextureLoader().load('/img/tiling-perlin-noise.png');
-
-    // const material = new MeshPhongMaterial({
-    //     // lighting: true,
-    //     // map: textures.grass,
-    //     shininess: 0,
-    //     vertexColors: VertexColors,
-    // });
-
     // const distortionTexture = textureLoader.load('/img/displacement.png');
     // distortionTexture.wrapS = RepeatWrapping;
     // distortionTexture.wrapT = RepeatWrapping;
 
-    this.uniforms =
-        /*
-            Requires you to merge data structure FIRST,
-            then assign values after.
+    /*
+        Requires you to merge data structure FIRST,
+        then assign values after.
 
-            i.e.
-            const uniforms = UniformsUtils.merge([ ... ]);
-            uniforms['uSomeUniformVar'] = 'SomeUniformValue'
-        */
-        UniformsUtils.merge([   
+        i.e.
+        const uniforms = UniformsUtils.merge([ ... ]);
+        uniforms['uSomeUniformVar'] = 'SomeUniformValue'
+    */
+    this.uniforms = UniformsUtils.merge([  
         UniformsLib['lights'],
         {
             // ...UniformsLib['lights'],
-            // lights: true,
             // diffuse: { type: 'c', value: new Color(0x0000ff)},
-            // uGrassTex: { type: 't', value: textures.grass },
-            // uRockTex: { type: 't', value: textures.rocks },
-            // uSandTex: { type: 't', value: textures.sand },
 
             // Fog
             uFogColor: { value: scene.fog.color },
@@ -126,7 +110,7 @@ function Terrain(width, height) {
     this.uniforms['uRockTex'] = { type: 't', value: textures.rocks },
     this.uniforms['uSandTex'] = { type: 't', value: textures.sand },
 
-    console.log(this.uniforms, scene);
+    console.log(this.uniforms);
 
     const material = new ShaderMaterial({
         // fog: true,

@@ -97,7 +97,7 @@ export const fragmentShader = `
     uniform vec3 uWaterColorShallow;
     uniform vec3 uWaterColorDeep;
     uniform float uTime;
-    
+
     // Depth
     uniform sampler2D uDepthMap;
     uniform sampler2D uDiffuseMap;
@@ -187,14 +187,14 @@ export const fragmentShader = `
         }
 
         // NormalSurface noises
-        float lightness = 0.1;
-        vec4 normalMapColor = texture2D(uNormalMap, totalDistortion);
-        vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
-        normal = normalize(normal);
-        float surfaceNoise = normalMapColor.r > surfaceNoiseCutoff
-            ? normalMapColor.r * lightness : 0.0;
+        // float lightness = 0.1;
+        // vec4 normalMapColor = texture2D(uNormalMap, totalDistortion);
+        // vec3 normal = vec3(normalMapColor.r * 2.0  - 1.0, normalMapColor.b, normalMapColor.g * 2.0 - 1.0);
+        // normal = normalize(normal);
+        // float surfaceNoise = normalMapColor.r > surfaceNoiseCutoff
+        //     ? normalMapColor.r * lightness : 0.0;
 
-        gl_FragColor += surfaceNoise;
+        // gl_FragColor += surfaceNoise;
 
         // Fog
         float fogDepth = gl_FragCoord.z / gl_FragCoord.w;

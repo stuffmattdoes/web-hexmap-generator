@@ -1,4 +1,12 @@
 export const vertexShader = `
+    // struct DirLight {
+    //     vec3 color;
+    //     vec3 direction;
+    // };
+
+    // uniform DirLight directionalLights[NUM_DIR_LIGHTS];
+    // varying vec3 lighting;
+
     attribute vec3 color;
 
     varying vec3 vColor;
@@ -11,14 +19,24 @@ export const vertexShader = `
     void main() {
         vColor = color;
         vNormal = normal;
-        // vPos = (position + 2.0) * 0.1;
-        vPos = (modelMatrix * vec4(position + 2.0, 1.0)).xyz * 0.1;
+        vPos = (modelMatrix * vec4(position, 1.0)).xyz * 0.1;
         vUv = uv * uTiling;
+
+        // for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
+        //     DirLight dl = directionalLights[i];
+        //     lighting += clamp(dot(vNormal, dl.direction), 0.0, 1.0) * dl.color;
+        // }
+
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
 `;
 
 export const fragmentShader = `
+    struct DirLight {
+        vec3 color;
+        vec3 direction;
+    };
+
     varying vec3 vColor;
     varying vec3 vNormal;
     varying vec3 vPos;
@@ -35,6 +53,16 @@ export const fragmentShader = `
     uniform float uFogFar;
     uniform float uFogNear;
 
+    // niform vec3 diffuse;
+    // varying vec3 vPos;
+    // varying vec3 vNormal;
+    // uniform vec3 pointLightColor[MAX_POINT_LIGHTS];
+    // uniform vec3 pointLightPosition[MAX_POINT_LIGHTS];
+    // uniform float pointLightDistance[MAX_POINT_LIGHTS];
+
+    // NUM_DIR_LIGHTS is pre-defined by Three.js
+    // varying vec3 lighting;
+    uniform DirLight directionalLights[NUM_DIR_LIGHTS];
     // #include <lights_phong_pars_fragment>
 
     vec3 getTriPlanarFrag(sampler2D texture, vec3 blending) {
@@ -62,8 +90,17 @@ export const fragmentShader = `
         vec3 rock = getTriPlanarFrag(uRockTex, blending) * vColor.b;
         gl_FragColor.rgb = (sand + grass + rock);
 
+
         // Lighting
-        gl_FragColor.rgb *= ambientLightColor;
+        // Ambient
+        vec3 lighting = ambientLightColor;
+
+        // Directional
+        for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
+            DirLight dl = directionalLights[i];
+            lighting += clamp(dot(vNormal, dl.direction), 0.0, 1.0) * dl.color;
+        }
+        gl_FragColor.rgb *= lighting;
 
         // Fog
         float fogDepth = gl_FragCoord.z / gl_FragCoord.w;
