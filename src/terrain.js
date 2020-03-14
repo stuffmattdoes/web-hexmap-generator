@@ -114,11 +114,6 @@ function Terrain(width, height) {
 
     const material = new ShaderMaterial({
         // fog: true,
-        // useFog: true,
-        // USE_FOG: true,
-        // color: true,
-        // useColor: true,
-        // USE_COLOR: true,
         lights: true,
         fragmentShader,
         uniforms: this.uniforms,
