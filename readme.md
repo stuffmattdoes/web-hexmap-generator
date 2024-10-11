@@ -33,7 +33,7 @@ To generate the hex map, we're going to do the following:
 - low = yellow sand
 - medium = green grass
 - tall = brown rock
-- tallens = white snow
+- tallest = white snow
 
 These colors crudely represent a mountainscape and some bodies of water. We can think of each color as a "biome" in the real world.
 <img width="974" alt="step-2" src="https://github.com/stuffmattdoes/web-hexmap-generator/blob/master/screenshots/cover-image-01.png">
