@@ -44,7 +44,7 @@ Applying "noise" to modifiy 3D objects is a common practice to add interest to a
 
 ![image](https://github.com/user-attachments/assets/c225ff76-5efb-4a07-8d4f-b55ad886722d)
 
-4. Now we'll reference this texture to determine the height of each hexagon. Small numeric values from the noise function result in the dark areas of the texture, and will translate to low watery hexagons on our map - water! Conversely, large numeric values from the noise function result in light areas on the previous texture, and will show up as tall which snowy hexagons on our map. And since this noise function smoothly transitions between values, our landscape looks more realistic.
+4. Now we'll reference this texture to determine the height of each hexagon. Small numeric values from the noise function result in the dark areas of the texture, and will translate to low watery hexagons on our map - water! Conversely, large numeric values from the noise function result in light areas on the previous texture, and will show up as tall snowy hexagons on our map. And since this noise function smoothly transitions between values, our landscape looks more realistic.
 <img width="974" alt="step-3" src="https://github.com/stuffmattdoes/web-hexmap-generator/blob/master/screenshots/cover-image-02.png">
 
 Here's removing wireframes & adding in "fog" for a more scenic shot
